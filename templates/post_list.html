@@ -1,0 +1,351 @@
+ 
+<!-- templates/post_list.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ class.className }} 게시판 - 소모임{% endblock %}
+
+{% block content %}
+<!-- 네비게이션 -->
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'classes' %}">모임</a>
+                </li>
+                <li class="breadcrumb-item active">{{ class.className }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 모임 정보 헤더 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-users"></i> {{ class.className }}
+                        </h4>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-tag"></i> {{ class.interestID.interestName }}
+                            <span class="ms-3">
+                                <i class="fas fa-calendar"></i> {{ class.classStartDate }} ~ {{ class.classEndDate }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'classes' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-arrow-left"></i> 모임 목록
+                            </a>
+                            {% if request.session.member_id %}
+                            <a href="{% url 'attendance' class.classID %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-calendar-check"></i> 출석체크
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 게시글 목록 -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-list"></i> 게시글 목록
+                </h5>
+                {% if request.session.member_id %}
+                <a href="{% url 'post_create' class.classID %}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-pen"></i> 글쓰기
+                </a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% for 게시글 in 게시글들 %}
+                <div class="post-item border-bottom py-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <!-- 카테고리 배지 -->
+                            <div class="mb-2">
+                                {% if 게시글.category == 'notice' %}
+                                    <span class="badge bg-danger me-2">
+                                        <i class="fas fa-bullhorn"></i> 공지사항
+                                    </span>
+                                {% elif 게시글.category == 'review' %}
+                                    <span class="badge bg-success me-2">
+                                        <i class="fas fa-star"></i> 후기
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-secondary me-2">
+                                        <i class="fas fa-comment"></i> 일반
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <h6 class="mb-2">
+                                <a href="{% url 'post_detail' 게시글.postID %}" class="text-decoration-none text-dark fw-bold">
+                                    {{ 게시글.title }}
+                                </a>
+                            </h6>
+                            
+                            <p class="text-muted mb-2 small">
+                                {{ 게시글.content|truncatewords:20 }}
+                            </p>
+                            
+                            <div class="d-flex align-items-center text-muted small">
+                                <i class="fas fa-user me-1"></i>
+                                <span class="me-3">{{ 게시글.author.name }}</span>
+                                <i class="fas fa-clock me-1"></i>
+                                <span>{{ 게시글.writeDate|date:"Y-m-d H:i" }}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end ms-3">
+                            <button class="btn btn-outline-primary btn-sm" onclick="viewPost({{ 게시글.postID }})">
+                                <i class="fas fa-eye"></i> 보기
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5">
+                    <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">등록된 게시글이 없습니다</h5>
+                    <p class="text-muted">첫 번째 게시글을 작성해보세요!</p>
+                    {% if request.session.member_id %}
+                    <a href="{% url 'post_create' class.classID %}" class="btn btn-primary">
+                        <i class="fas fa-pen me-2"></i>첫 글 작성하기
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt me-2"></i>로그인 후 글쓰기
+                    </a>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- 페이지네이션 -->
+        {% if 게시글들.has_other_pages %}
+        <div class="d-flex justify-content-center mt-4">
+            <nav aria-label="Page navigation">
+                <ul class="pagination">
+                    {% if 게시글들.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ 게시글들.previous_page_number }}">
+                                <i class="fas fa-chevron-left"></i> 이전
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in 게시글들.paginator.page_range %}
+                        {% if 게시글들.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > 게시글들.number|add:'-3' and num < 게시글들.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if 게시글들.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ 게시글들.next_page_number }}">
+                                다음 <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- 사이드바 -->
+    <div class="col-md-4">
+        <!-- 모임 정보 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle"></i> 모임 정보
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <strong>관심사:</strong> 
+                    <span class="badge bg-primary">{{ class.interestID.interestName }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>활동 기간:</strong><br>
+                    <small class="text-muted">{{ class.classStartDate }} ~ {{ class.classEndDate }}</small>
+                </div>
+                <div class="mb-3">
+                    <strong>참여자:</strong>
+                    <span class="fw-bold text-success">{{ class.member_count }}명</span>
+                </div>
+                
+                {% if not request.session.member_id %}
+                <div class="alert alert-info">
+                    <small>
+                        <i class="fas fa-info-circle"></i>
+                        로그인하면 모임에 참여하고 글을 작성할 수 있어요!
+                    </small>
+                </div>
+                <div class="d-grid">
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-sign-in-alt"></i> 로그인
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- 게시판 규칙 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-gavel"></i> 게시판 규칙
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        모임과 관련된 내용으로 작성해주세요
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        예의바른 언어를 사용해주세요
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        개인정보는 공개하지 마세요
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        건전한 토론 문화를 만들어가요
+                    </li>
+                    <li>
+                        <i class="fas fa-times text-danger me-2"></i>
+                        광고성 글은 삭제될 수 있습니다
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 최근 활동 -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-clock"></i> 최근 활동
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if 게시글들|length > 0 %}
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-comment text-primary me-2"></i>
+                        <small>최근 글: {{ 게시글들.0.writeDate|date:"m월 d일" }}</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user text-success me-2"></i>
+                        <small>활발한 멤버: {{ 게시글들.0.author.name }}</small>
+                    </div>
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-comment-slash fa-2x mb-2"></i>
+                        <p class="small">아직 활동이 없어요</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 게시글 보기
+function viewPost(postId) {
+    window.location.href = `/posts/${postId}/`;
+}
+
+// 게시글 항목 호버 효과
+document.addEventListener('DOMContentLoaded', function() {
+    const postItems = document.querySelectorAll('.post-item');
+    postItems.forEach(item => {
+        item.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#f8f9fa';
+            this.style.transform = 'translateX(5px)';
+            this.style.transition = 'all 0.3s ease';
+        });
+        
+        item.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+            this.style.transform = '';
+        });
+    });
+});
+</script>
+
+<style>
+.post-item {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 1rem !important;
+}
+
+.post-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.post-item:last-child {
+    border-bottom: none !important;
+}
+
+.badge {
+    font-size: 0.7rem;
+}
+
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: 2px solid #e9ecef;
+    color: #4285F4;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #4285F4, #34A853);
+    border-color: #4285F4;
+}
+
+@media (max-width: 768px) {
+    .post-item {
+        padding: 0.75rem !important;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .text-end {
+        margin-top: 1rem;
+        margin-left: 0 !important;
+    }
+}
+</style>
+{% endblock %}

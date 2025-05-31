@@ -1,0 +1,486 @@
+ 
+<!-- templates/post_create.html -->
+{% extends 'base.html' %}
+
+{% block title %}새 글쓰기 - {{ class.className }}{% endblock %}
+
+{% block content %}
+<!-- 네비게이션 -->
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'classes' %}">모임</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'post_list' class.classID %}">{{ class.className }}</a>
+                </li>
+                <li class="breadcrumb-item active">새 글쓰기</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 모임 정보 헤더 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h4 class="mb-2">
+                    <i class="fas fa-users"></i> {{ class.className }}
+                </h4>
+                <p class="text-muted mb-0">
+                    <i class="fas fa-tag"></i> {{ class.interestID.interestName }}
+                    <span class="ms-3">
+                        <i class="fas fa-calendar"></i> {{ class.classStartDate }} ~ {{ class.classEndDate }}
+                    </span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 글쓰기 폼 -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-pen"></i> 새 글쓰기
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" id="postForm">
+                    {% csrf_token %}
+                    
+                    <!-- 카테고리 선택 -->
+                    <div class="mb-3">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">
+                            <i class="fas fa-folder me-2"></i>{{ form.category.label }}
+                        </label>
+                        {{ form.category }}
+                        <div class="form-text">게시글의 성격에 맞는 카테고리를 선택해주세요.</div>
+                    </div>
+                    
+                    <!-- 제목 입력 -->
+                    <div class="mb-3">
+                        <label for="{{ form.title.id_for_label }}" class="form-label">
+                            <i class="fas fa-heading me-2"></i>{{ form.title.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.title }}
+                        <div class="form-text">제목은 2자 이상 100자 이하로 입력해주세요.</div>
+                        <div id="titleCount" class="small text-muted">0 / 100</div>
+                    </div>
+                    
+                    <!-- 내용 입력 -->
+                    <div class="mb-4">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">
+                            <i class="fas fa-align-left me-2"></i>{{ form.content.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.content }}
+                        <div class="form-text">내용은 30자 이상 입력해주세요.</div>
+                        <div id="contentCount" class="small text-muted">0 / 5000</div>
+                    </div>
+                    
+                    <!-- 작성 가이드 -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-info-circle"></i> 작성 가이드
+                        </h6>
+                        <ul class="mb-0 small">
+                            <li><strong>공지사항</strong>: 모임 일정, 장소 변경 등 중요한 안내사항</li>
+                            <li><strong>후기</strong>: 모임 참여 후기, 소감, 추천 등</li>
+                            <li><strong>일반</strong>: 자유로운 대화, 질문, 제안 등</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 버튼들 -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'post_list' class.classID %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> 취소
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary me-2" onclick="previewPost()">
+                                <i class="fas fa-eye"></i> 미리보기
+                            </button>
+                            <button type="button" class="btn btn-outline-info me-2" onclick="saveDraft()">
+                                <i class="fas fa-save"></i> 임시저장
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> 작성완료
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 사이드바 -->
+    <div class="col-md-4">
+        <!-- 작성 팁 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-lightbulb"></i> 작성 팁
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        구체적이고 명확한 제목을 작성하세요
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        다른 멤버들이 이해하기 쉽게 작성하세요
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        모임과 관련된 내용으로 작성하세요
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        정중하고 예의바른 언어를 사용하세요
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check text-success me-2"></i>
+                        개인정보는 공개하지 마세요
+                    </li>
+                    <li>
+                        <i class="fas fa-times text-danger me-2"></i>
+                        광고성 내용은 삼가해주세요
+                    </li>
+                </ul>
+            </div>
+        </div>
+        
+        <!-- 포맷팅 도구 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-text-width"></i> 텍스트 도구
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="btn-group-vertical w-100" role="group">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="insertText('**', '**', '굵은 글씨')">
+                        <i class="fas fa-bold"></i> 굵게
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="insertText('*', '*', '기울임 글씨')">
+                        <i class="fas fa-italic"></i> 기울임
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="insertText('\n- ', '', '목록 항목')">
+                        <i class="fas fa-list"></i> 목록
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="insertText('\n\n---\n\n', '', '')">
+                        <i class="fas fa-minus"></i> 구분선
+                    </button>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i>
+                        텍스트를 선택한 후 버튼을 누르면 서식이 적용됩니다.
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 모임 정보 -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-info-circle"></i> 모임 정보
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>모임명:</strong><br>
+                    <small>{{ class.className }}</small>
+                </div>
+                <div class="mb-2">
+                    <strong>관심사:</strong>
+                    <span class="badge bg-primary">{{ class.interestID.interestName }}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>활동 기간:</strong><br>
+                    <small class="text-muted">{{ class.classStartDate }} ~ {{ class.classEndDate }}</small>
+                </div>
+                <div class="d-grid">
+                    <a href="{% url 'post_list' class.classID %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-arrow-left"></i> 게시판으로 돌아가기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 미리보기 모달 -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye"></i> 미리보기
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent">
+                    <!-- 미리보기 내용이 여기에 표시됩니다 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-primary" onclick="submitForm()">작성 완료</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 글자 수 카운터
+function setupCharCounters() {
+    const titleInput = document.getElementById('id_title');
+    const contentTextarea = document.getElementById('id_content');
+    const titleCount = document.getElementById('titleCount');
+    const contentCount = document.getElementById('contentCount');
+    
+    titleInput.addEventListener('input', function() {
+        const length = this.value.length;
+        titleCount.textContent = `${length} / 100`;
+        titleCount.className = length > 100 ? 'small text-danger' : 'small text-muted';
+    });
+    
+    contentTextarea.addEventListener('input', function() {
+        const length = this.value.length;
+        contentCount.textContent = `${length} / 5000`;
+        contentCount.className = length > 5000 ? 'small text-danger' : 'small text-muted';
+    });
+}
+
+// 텍스트 삽입 함수
+function insertText(before, after, placeholder) {
+    const textarea = document.getElementById('id_content');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    const textToInsert = selectedText || placeholder;
+    
+    const newText = before + textToInsert + after;
+    textarea.value = textarea.value.substring(0, start) + newText + textarea.value.substring(end);
+    
+    // 커서 위치 조정
+    const newPosition = start + before.length + textToInsert.length;
+    textarea.setSelectionRange(newPosition, newPosition);
+    textarea.focus();
+    
+    // 글자 수 업데이트
+    textarea.dispatchEvent(new Event('input'));
+}
+
+// 미리보기 함수
+function previewPost() {
+    const title = document.getElementById('id_title').value;
+    const content = document.getElementById('id_content').value;
+    const category = document.getElementById('id_category').value;
+    
+    if (!title || !content) {
+        alert('제목과 내용을 입력한 후 미리보기를 할 수 있습니다.');
+        return;
+    }
+    
+    let categoryBadge = '';
+    if (category === 'notice') {
+        categoryBadge = '<span class="badge bg-danger"><i class="fas fa-bullhorn"></i> 공지사항</span>';
+    } else if (category === 'review') {
+        categoryBadge = '<span class="badge bg-success"><i class="fas fa-star"></i> 후기</span>';
+    } else {
+        categoryBadge = '<span class="badge bg-secondary"><i class="fas fa-comment"></i> 일반</span>';
+    }
+    
+    const previewHtml = `
+        <div class="card">
+            <div class="card-header">
+                ${categoryBadge}
+                <h5 class="mt-2 mb-1">${title}</h5>
+                <small class="text-muted">
+                    <i class="fas fa-user"></i> 나 · 
+                    <i class="fas fa-clock"></i> 방금 전
+                </small>
+            </div>
+            <div class="card-body">
+                <div style="white-space: pre-wrap; line-height: 1.6;">${content}</div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('previewContent').innerHTML = previewHtml;
+    new bootstrap.Modal(document.getElementById('previewModal')).show();
+}
+
+// 임시저장 함수
+function saveDraft() {
+    const title = document.getElementById('id_title').value;
+    const content = document.getElementById('id_content').value;
+    const category = document.getElementById('id_category').value;
+    
+    if (!title && !content) {
+        alert('저장할 내용이 없습니다.');
+        return;
+    }
+    
+    const draft = {
+        title: title,
+        content: content,
+        category: category,
+        timestamp: new Date().toISOString()
+    };
+    
+    localStorage.setItem('post_draft_{{ class.classID }}', JSON.stringify(draft));
+    alert('✅ 임시저장되었습니다.');
+}
+
+// 임시저장 불러오기
+function loadDraft() {
+    const draft = localStorage.getItem('post_draft_{{ class.classID }}');
+    if (draft) {
+        const data = JSON.parse(draft);
+        if (confirm(`${new Date(data.timestamp).toLocaleDateString()} 에 임시저장된 글이 있습니다. 불러오시겠습니까?`)) {
+            document.getElementById('id_title').value = data.title || '';
+            document.getElementById('id_content').value = data.content || '';
+            document.getElementById('id_category').value = data.category || 'general';
+            
+            // 글자 수 업데이트
+            document.getElementById('id_title').dispatchEvent(new Event('input'));
+            document.getElementById('id_content').dispatchEvent(new Event('input'));
+        }
+    }
+}
+
+// 폼 제출 함수
+function submitForm() {
+    document.getElementById('postForm').submit();
+}
+
+// 폼 유효성 검사
+document.getElementById('postForm').addEventListener('submit', function(e) {
+    const title = document.getElementById('id_title').value.trim();
+    const content = document.getElementById('id_content').value.trim();
+    
+    if (title.length < 2) {
+        e.preventDefault();
+        alert('제목은 2자 이상 입력해주세요.');
+        document.getElementById('id_title').focus();
+        return;
+    }
+    
+    if (title.length > 100) {
+        e.preventDefault();
+        alert('제목은 100자 이하로 입력해주세요.');
+        document.getElementById('id_title').focus();
+        return;
+    }
+    
+    if (content.length < 30) {
+        e.preventDefault();
+        alert('내용은 30자 이상 입력해주세요.');
+        document.getElementById('id_content').focus();
+        return;
+    }
+    
+    if (content.length > 5000) {
+        e.preventDefault();
+        alert('내용은 5000자 이하로 입력해주세요.');
+        document.getElementById('id_content').focus();
+        return;
+    }
+    
+    // 임시저장 데이터 삭제
+    localStorage.removeItem('post_draft_{{ class.classID }}');
+});
+
+// 페이지 로드 시 초기화
+document.addEventListener('DOMContentLoaded', function() {
+    setupCharCounters();
+    loadDraft();
+    
+    // 페이지 나가기 전 확인
+    window.addEventListener('beforeunload', function(e) {
+        const title = document.getElementById('id_title').value.trim();
+        const content = document.getElementById('id_content').value.trim();
+        
+        if (title || content) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+});
+</script>
+
+<style>
+#id_title {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+#id_content {
+    min-height: 300px;
+    font-family: inherit;
+    line-height: 1.6;
+    resize: vertical;
+}
+
+.alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+.btn-group-vertical .btn {
+    margin-bottom: 0.25rem;
+}
+
+.btn-group-vertical .btn:last-child {
+    margin-bottom: 0;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #4285F4;
+    box-shadow: 0 0 0 0.25rem rgba(66, 133, 244, 0.25);
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+#previewContent .card {
+    border: none;
+    box-shadow: none;
+}
+
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .d-flex.justify-content-between > div {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .btn-group-vertical {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .btn-group-vertical .btn {
+        flex: 1;
+        margin-bottom: 0;
+        margin-right: 0.25rem;
+    }
+}
+</style>
+{% endblock %}

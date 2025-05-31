@@ -1,0 +1,473 @@
+ 
+<!-- templates/post_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}{{ 게시글.title }} - {{ 게시글.class_classID.className }}{% endblock %}
+
+{% block content %}
+<!-- 네비게이션 -->
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'classes' %}">모임</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'post_list' 게시글.class_classID.classID %}">{{ 게시글.class_classID.className }}</a>
+                </li>
+                <li class="breadcrumb-item active">{{ 게시글.title|truncatechars:30 }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 게시글 상세 -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <!-- 게시글 헤더 -->
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <!-- 카테고리 배지 -->
+                        {% if 게시글.category == 'notice' %}
+                            <span class="badge bg-danger mb-2">
+                                <i class="fas fa-bullhorn"></i> 공지사항
+                            </span>
+                        {% elif 게시글.category == 'review' %}
+                            <span class="badge bg-success mb-2">
+                                <i class="fas fa-star"></i> 후기
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary mb-2">
+                                <i class="fas fa-comment"></i> 일반
+                            </span>
+                        {% endif %}
+                        
+                        <h4 class="mb-2">{{ 게시글.title }}</h4>
+                        
+                        <div class="d-flex align-items-center text-muted">
+                            <div class="d-flex align-items-center me-4">
+                                <div class="avatar-circle me-2">
+                                    {{ 게시글.author.name|first }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ 게시글.author.name }}</div>
+                                    <small>{{ 게시글.author.accountType|capfirst }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="me-4">
+                                <i class="fas fa-clock me-1"></i>
+                                <small>{{ 게시글.writeDate|date:"Y년 m월 d일 H:i" }}</small>
+                            </div>
+                            
+                            {% if 게시글.writeDate != 게시글.updateDate %}
+                            <div>
+                                <i class="fas fa-edit me-1"></i>
+                                <small>수정: {{ 게시글.updateDate|date:"m월 d일 H:i" }}</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#" onclick="sharePost()">
+                                <i class="fas fa-share me-2"></i>공유하기
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="reportPost()">
+                                <i class="fas fa-flag me-2"></i>신고하기
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 게시글 내용 -->
+            <div class="card-body">
+                <div class="post-content">
+                    {{ 게시글.content|linebreaks }}
+                </div>
+                
+                <!-- 게시글 액션 -->
+                <div class="post-actions mt-4 pt-3 border-top">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-primary btn-sm" onclick="likePost()">
+                                <i class="far fa-thumbs-up"></i> 좋아요
+                                <span class="badge bg-primary ms-1">0</span>
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="bookmarkPost()">
+                                <i class="far fa-bookmark"></i> 북마크
+                            </button>
+                        </div>
+                        
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'post_list' 게시글.class_classID.classID %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-list"></i> 목록
+                            </a>
+                            {% if request.session.member_id == 게시글.author.accountID %}
+                            <button class="btn btn-outline-warning btn-sm" onclick="editPost()">
+                                <i class="fas fa-edit"></i> 수정
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="deletePost()">
+                                <i class="fas fa-trash"></i> 삭제
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 댓글 섹션 (미구현) -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-comments"></i> 댓글 
+                    <span class="badge bg-secondary">0</span>
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if request.session.member_id %}
+                <div class="comment-form mb-4">
+                    <div class="d-flex">
+                        <div class="avatar-circle me-3">
+                            U
+                        </div>
+                        <div class="flex-grow-1">
+                            <textarea class="form-control" rows="3" placeholder="댓글을 입력하세요..."></textarea>
+                            <div class="text-end mt-2">
+                                <button class="btn btn-primary btn-sm" onclick="addComment()">
+                                    <i class="fas fa-paper-plane"></i> 댓글 작성
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-comments fa-3x mb-3"></i>
+                    <p>아직 댓글이 없습니다.</p>
+                    {% if not request.session.member_id %}
+                    <p><a href="{% url 'login' %}">로그인</a>하면 댓글을 작성할 수 있어요!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 사이드바 -->
+    <div class="col-md-4">
+        <!-- 모임 정보 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-users"></i> 모임 정보
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="fw-bold">{{ 게시글.class_classID.className }}</h6>
+                <p class="text-muted small mb-3">{{ 게시글.class_classID.interestID.interestName }}</p>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small>활동 기간:</small>
+                    </div>
+                    <small class="text-muted">
+                        {{ 게시글.class_classID.classStartDate }} ~ {{ 게시글.class_classID.classEndDate }}
+                    </small>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'post_list' 게시글.class_classID.classID %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-comments"></i> 게시판 가기
+                    </a>
+                    <button class="btn btn-outline-success btn-sm" onclick="joinClass()">
+                        <i class="fas fa-plus"></i> 모임 참여
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 작성자 정보 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-user"></i> 작성자 정보
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="avatar-large mx-auto mb-3">
+                    {{ 게시글.author.name|first }}
+                </div>
+                <h6 class="fw-bold">{{ 게시글.author.name }}</h6>
+                <p class="text-muted small">{{ 게시글.author.accountType|capfirst }}</p>
+                
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="fw-bold">{{ 게시글.author.posts.count }}</div>
+                        <small class="text-muted">게시글</small>
+                    </div>
+                    <div class="stat-item">
+                        <div class="fw-bold">{{ 게시글.author.sugang_set.count }}</div>
+                        <small class="text-muted">참여 모임</small>
+                    </div>
+                </div>
+                
+                <button class="btn btn-outline-primary btn-sm mt-3" onclick="viewProfile()">
+                    <i class="fas fa-user"></i> 프로필 보기
+                </button>
+            </div>
+        </div>
+        
+        <!-- 같은 모임의 다른 글 -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-list"></i> 다른 게시글
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center text-muted">
+                    <i class="fas fa-file-alt fa-2x mb-2"></i>
+                    <p class="small">다른 게시글을 보려면<br>게시판으로 이동하세요</p>
+                    <a href="{% url 'post_list' 게시글.class_classID.classID %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list"></i> 게시판 보기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 게시글 액션 함수들
+function likePost() {
+    alert('👍 좋아요 기능은 준비 중입니다!');
+}
+
+function bookmarkPost() {
+    alert('🔖 북마크 기능은 준비 중입니다!');
+}
+
+function sharePost() {
+    const url = window.location.href;
+    const title = '{{ 게시글.title }}';
+    const text = `흥미로운 게시글을 발견했어요: ${title}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: text,
+            url: url
+        });
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('🔗 링크가 클립보드에 복사되었습니다!');
+        });
+    }
+}
+
+function reportPost() {
+    if (confirm('이 게시글을 신고하시겠습니까?')) {
+        alert('🚨 신고가 접수되었습니다. 검토 후 조치하겠습니다.');
+    }
+}
+
+function editPost() {
+    alert('✏️ 게시글 수정 기능은 준비 중입니다!');
+}
+
+function deletePost() {
+    if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+        alert('🗑️ 게시글 삭제 기능은 준비 중입니다!');
+    }
+}
+
+function addComment() {
+    alert('💬 댓글 작성 기능은 준비 중입니다!');
+}
+
+function joinClass() {
+    {% if request.session.member_id %}
+        if (confirm('이 모임에 참여하시겠습니까?')) {
+            // 모임 참여 로직
+            window.location.href = '{% url "classes" %}';
+        }
+    {% else %}
+        alert('로그인이 필요합니다.');
+        window.location.href = '{% url "login" %}';
+    {% endif %}
+}
+
+function viewProfile() {
+    alert('👤 프로필 보기 기능은 준비 중입니다!');
+}
+
+// 페이지 로드 애니메이션
+document.addEventListener('DOMContentLoaded', function() {
+    const card = document.querySelector('.card');
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+        card.style.transition = 'all 0.5s ease';
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0)';
+    }, 100);
+});
+</script>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4285F4, #34A853);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.avatar-large {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4285F4, #34A853);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 2rem;
+    margin: 0 auto;
+}
+
+.post-content {
+    line-height: 1.8;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.post-content p {
+    margin-bottom: 1.2rem;
+}
+
+.post-actions {
+    background: #f8f9fa;
+    margin: -1.25rem -1.25rem 0;
+    padding: 1rem 1.25rem;
+    border-radius: 0 0 0.375rem 0.375rem;
+}
+
+.stats-row {
+    display: flex;
+    justify-content: space-around;
+    margin: 1rem 0;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.badge {
+    font-size: 0.7rem;
+}
+
+.comment-form {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.5rem;
+}
+
+.btn-group .btn {
+    border-radius: 0.375rem;
+    margin: 0 2px;
+}
+
+.dropdown-menu {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border: none;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+@media (max-width: 768px) {
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        align-items: flex-start !important;
+    }
+    
+    .btn-group {
+        margin-bottom: 1rem;
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+    }
+    
+    .post-content {
+        font-size: 1rem;
+    }
+    
+    .avatar-circle {
+        width: 35px;
+        height: 35px;
+        font-size: 1rem;
+    }
+    
+    .stats-row {
+        margin: 0.5rem 0;
+    }
+}
+
+/* 반응형 테이블 */
+@media (max-width: 576px) {
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .post-actions {
+        margin: -1rem -1rem 0;
+        padding: 0.75rem 1rem;
+    }
+    
+    .comment-form {
+        padding: 0.75rem;
+    }
+}
+
+/* 다크모드 지원 */
+@media (prefers-color-scheme: dark) {
+    .post-content {
+        color: #e9ecef;
+    }
+    
+    .comment-form {
+        background: #343a40;
+    }
+    
+    .post-actions {
+        background: #343a40;
+    }
+}
+</style>
+{% endblock %}

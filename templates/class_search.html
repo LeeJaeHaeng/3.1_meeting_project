@@ -1,0 +1,374 @@
+ 
+<!-- templates/class_search.html -->
+{% extends 'base.html' %}
+
+{% block title %}우리동네 취미 모임 - 소모임{% endblock %}
+
+{% block content %}
+<!-- 히어로 섹션 -->
+<div class="hero-section">
+    <h1 class="display-4 fw-bold mb-3">
+        <i class="fas fa-users"></i> 우리동네 취미 모임
+    </h1>
+    <p class="lead">{{ total_classes }}개 카테고리의 {{ total_members }}명 모임이 기다리고 있어요!</p>
+</div>
+
+<!-- 카테고리별 모임 찾기 -->
+<div class="search-container">
+    <h4 class="mb-4">카테고리별 모임 찾기</h4>
+    
+    <!-- 카테고리 버튼들 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group flex-wrap" role="group">
+                <a href="{% url 'classes' %}" class="btn {% if current_category == 'all' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="fas fa-home"></i> 전체
+                </a>
+                <a href="{% url 'classes' %}?category=sports" class="btn {% if current_category == 'sports' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="fas fa-running"></i> 운동/스포츠
+                </a>
+                <a href="{% url 'classes' %}?category=study" class="btn {% if current_category == 'study' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="fas fa-book"></i> 스터디
+                </a>
+                <a href="{% url 'classes' %}?category=hobby" class="btn {% if current_category == 'hobby' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="fas fa-palette"></i> 취미/여가
+                </a>
+                <a href="{% url 'classes' %}?category=culture" class="btn {% if current_category == 'culture' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="fas fa-theater-masks"></i> 문화/예술
+                </a>
+                <a href="{% url 'classes' %}?category=lifestyle" class="btn {% if current_category == 'lifestyle' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                    <i class="fas fa-leaf"></i> 라이프스타일
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 검색 폼 -->
+    <form method="get" class="row g-3">
+        <div class="col-md-5">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                {{ form.keyword }}
+            </div>
+        </div>
+        <div class="col-md-3">
+            {{ form.interest }}
+        </div>
+        <div class="col-md-2">
+            <select name="sort" class="form-select">
+                <option value="recent" {% if current_sort == 'recent' %}selected{% endif %}>최신순</option>
+                <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>인기순</option>
+                <option value="name" {% if current_sort == 'name' %}selected{% endif %}>이름순</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="fas fa-search"></i> 검색
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- 통계 카드들 -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ total_classes }}</div>
+            <div class="text-muted">활동 중인 모임</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ total_members }}</div>
+            <div class="text-muted">등록된 회원</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ total_participants }}</div>
+            <div class="text-muted">관심사 카테고리</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="stats-card">
+            <div class="stats-number">{{ total_participants }}</div>
+            <div class="text-muted">총 참여자</div>
+        </div>
+    </div>
+</div>
+
+<!-- 전체 모임 섹션 -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h3>
+                <i class="fas fa-fire text-danger"></i> 전체 모임
+                {% if current_category != 'all' %}
+                    <span class="badge bg-primary">{{ current_category|title }}</span>
+                {% endif %}
+            </h3>
+            <div class="text-muted">
+                총 {{ classes.paginator.count }}개 모임
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 모임 카드 그리드 -->
+<div class="row">
+    {% for class in classes %}
+    <div class="col-lg-4 col-md-6 mb-4">
+        <div class="card card-custom h-100">
+            <!-- 모임 이미지 영역 -->
+            <div class="position-relative">
+                <div class="card-img-top" style="height: 200px; background: linear-gradient(45deg, 
+                    {% if class.interestID.interestName|lower in '테니스,배드민턴,축구,농구,야구,배구,수영,요가,필라테스,헬스,크로스핏,러닝,마라톤,등산,트레킹,클라이밍,골프,볼링' %}#667eea, #764ba2
+                    {% elif class.interestID.interestName|lower in '영어,중국어,일본어,java,python,토익,토플,독서,프로그래밍,투자,주식,경제' %}#f093fb, #f5576c
+                    {% elif class.interestID.interestName|lower in '요리,베이킹,커피,와인,여행,게임,카페,맛집,쇼핑,패션' %}#4facfe, #00f2fe
+                    {% elif class.interestID.interestName|lower in '영화,연극,뮤지컬,콘서트,음악,미술,사진,전시회,갤러리' %}#43e97b, #38f9d7
+                    {% else %}#ffecd2, #fcb69f
+                    {% endif %}); display: flex; align-items: center; justify-content: center; border-radius: 12px 12px 0 0;">
+                    <div class="text-center text-white">
+                        <i class="fas fa-users fa-3x opacity-75 mb-2"></i>
+                        <div class="fw-bold">{{ class.member_count }}명 참여</div>
+                    </div>
+                </div>
+                
+                <!-- 뱃지들 -->
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge bg-primary">
+                        {{ class.interestID.interestName }}
+                    </span>
+                </div>
+                
+                {% if class.member_count > 5 %}
+                <div class="position-absolute top-0 start-0 m-2">
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-fire"></i> HOT
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-body">
+                <h5 class="card-title fw-bold mb-2">{{ class.className }}</h5>
+                
+                <!-- 모임 정보 -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-calendar-alt text-primary me-2"></i>
+                        <small class="text-muted">
+                            {{ class.classStartDate }} ~ {{ class.classEndDate }}
+                        </small>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-users text-success me-2"></i>
+                        <small class="text-muted">참여자 {{ class.member_count }}명</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                        <small class="text-muted">
+                            {% if '강남' in class.className %}강남구
+                            {% elif '홍대' in class.className %}마포구
+                            {% elif '신촌' in class.className %}서대문구
+                            {% elif '이태원' in class.className %}용산구
+                            {% elif '강북' in class.className %}강북구
+                            {% else %}서울 전지역
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- 액션 버튼들 -->
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success" onclick="applyClass({{ class.classID }})">
+                        <i class="fas fa-plus"></i> 참여하기
+                    </button>
+                    <div class="btn-group" role="group">
+                        <a href="{% url 'post_list' class.classID %}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-comments"></i> 게시판
+                        </a>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="shareClass({{ class.classID }})">
+                            <i class="fas fa-share"></i> 공유
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="favoriteClass({{ class.classID }})">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">검색 결과가 없습니다</h4>
+            <p class="text-muted">다른 키워드로 검색해보세요!</p>
+            <a href="{% url 'classes' %}" class="btn btn-primary-custom">
+                <i class="fas fa-refresh"></i> 전체 모임 보기
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 페이지네이션 -->
+{% if classes.has_other_pages %}
+<div class="d-flex justify-content-center mt-5">
+    <nav aria-label="Page navigation">
+        <ul class="pagination pagination-lg">
+            {% if classes.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ classes.previous_page_number }}&category={{ current_category }}&sort={{ current_sort }}">
+                        <i class="fas fa-chevron-left"></i> 이전
+                    </a>
+                </li>
+            {% endif %}
+            
+            {% for num in classes.paginator.page_range %}
+                {% if classes.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > classes.number|add:'-3' and num < classes.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}&category={{ current_category }}&sort={{ current_sort }}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if classes.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ classes.next_page_number }}&category={{ current_category }}&sort={{ current_sort }}">
+                        다음 <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+
+<!-- CSRF 토큰 -->
+<form style="display:none;">
+    {% csrf_token %}
+</form>
+
+<script>
+// 모임 신청 함수
+function applyClass(classId) {
+    {% if request.session.member_id %}
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        fetch(`/classes/${classId}/apply/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ ' + data.message);
+                location.reload();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ 네트워크 오류가 발생했습니다.');
+        });
+    {% else %}
+        alert('로그인이 필요합니다.');
+        window.location.href = '{% url "login" %}';
+    {% endif %}
+}
+
+// 모임 공유 함수
+function shareClass(classId) {
+    const url = window.location.href;
+    const text = `흥미로운 모임을 발견했어요! 함께 참여해보세요!`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: '소모임 추천',
+            text: text,
+            url: url
+        });
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            alert('🔗 링크가 클립보드에 복사되었습니다!');
+        });
+    }
+}
+
+// 관심 모임 추가/제거
+function favoriteClass(classId) {
+    alert('💝 관심 모임 기능은 준비 중입니다!');
+}
+
+// 페이지 로드 애니메이션
+document.addEventListener('DOMContentLoaded', function() {
+    const cards = document.querySelectorAll('.card-custom');
+    cards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
+});
+</script>
+
+<style>
+.btn-group .btn {
+    flex: 1;
+}
+
+.card-img-top {
+    transition: transform 0.3s ease;
+}
+
+.card-custom:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.pagination .page-link {
+    border-radius: 8px;
+    margin: 0 2px;
+    border: 2px solid #e9ecef;
+    color: #4285F4;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #4285F4, #34A853);
+    border-color: #4285F4;
+}
+
+.pagination .page-link:hover {
+    background-color: #f8f9fa;
+    border-color: #4285F4;
+}
+
+@media (max-width: 768px) {
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+    
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}
