@@ -1,4 +1,3 @@
- 
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -465,9 +464,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // 관심사별 필터링
+        console.log("=== DEBUG: base.html 스크립트 로드됨 ===");
+        console.log("사이드바 통계 - 관심사:", {{ sidebar_total_interests }}, "모임:", {{ sidebar_total_classes }});
+        
+        // 관심사별 필터링 - 수정된 버전
         function filterByInterest(category, interestName) {
-            const searchUrl = `{% url 'classes' %}?category=${category}&keyword=${encodeURIComponent(interestName)}`;
+            console.log("filterByInterest 호출됨:", category, interestName);
+            const searchUrl = `/classes/?category=${category}&keyword=${encodeURIComponent(interestName)}`;
+            console.log("이동할 URL:", searchUrl);
             window.location.href = searchUrl;
         }
         
@@ -481,6 +485,20 @@
                 }
             });
         }, 5000);
+        
+        // 페이지 로드 시 디버그 정보 출력
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("=== DEBUG: 페이지 로드 완료 ===");
+            console.log("사이드바 스포츠 관심사 수:", document.querySelectorAll('.sidebar-section .interest-item').length);
+            
+            // 클릭 이벤트 테스트
+            const interestItems = document.querySelectorAll('.interest-item');
+            console.log("관심사 항목 수:", interestItems.length);
+            
+            interestItems.forEach((item, index) => {
+                console.log(`관심사 ${index + 1}:`, item.querySelector('.interest-name')?.textContent);
+            });
+        });
     </script>
 </body>
 </html>

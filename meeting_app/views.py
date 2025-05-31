@@ -53,22 +53,27 @@ def 회원가입(request):
     return render(request, 'register.html', {'form': form})
 
 def 클래스검색및신청(request):
-    """클래스(소모임) 검색 및 신청 화면 - 수정된 버전"""
+    """클래스(소모임) 검색 및 신청 화면"""
     try:
+        print("=== DEBUG: 클래스검색및신청 함수 시작 ===")
+        
         # 검색 폼
         form = ClassSearchForm(request.GET)
         
-        # 기본 쿼리셋 - 최적화된 쿼리
-        classes = Class.objects.select_related('interestID').prefetch_related(
-            'sugang_set__member_accountID'
-        ).annotate(
+        # 기본 쿼리셋
+        classes = Class.objects.select_related('interestID').annotate(
             member_count=Count('sugang_set', distinct=True)
         )
         
+        print(f"DEBUG: 전체 클래스 수: {classes.count()}")
+        
         # 카테고리별 필터링
         category = request.GET.get('category', 'all')
+        keyword = request.GET.get('keyword', '')
         
-        # 카테고리 매핑 (관심사명 기반)
+        print(f"DEBUG: category={category}, keyword={keyword}")
+        
+        # 카테고리 매핑
         category_keywords = {
             'sports': ['테니스', '배드민턴', '축구', '농구', '야구', '배구', '수영', '요가', '필라테스', 
                       '헬스', '크로스핏', '러닝', '마라톤', '등산', '트레킹', '클라이밍', '골프', '볼링'],
@@ -79,22 +84,33 @@ def 클래스검색및신청(request):
             'lifestyle': ['반려동물', '원예', '인테리어', '명상', '힐링', '아로마', '자원봉사']
         }
         
+        # 카테고리 필터링
         if category != 'all' and category in category_keywords:
             keywords = category_keywords[category]
             interest_filter = Q()
-            for keyword in keywords:
-                interest_filter |= Q(interestID__interestName__icontains=keyword)
+            for kw in keywords:
+                interest_filter |= Q(interestID__interestName__icontains=kw)
             classes = classes.filter(interest_filter)
+            print(f"DEBUG: 카테고리 필터 후 클래스 수: {classes.count()}")
         
-        # 검색 기능
+        # 키워드 검색
+        search_keyword = keyword or request.GET.get('search', '')
+        if search_keyword:
+            classes = classes.filter(
+                Q(className__icontains=search_keyword) |
+                Q(interestID__interestName__icontains=search_keyword)
+            ).distinct()
+            print(f"DEBUG: 키워드 검색 후 클래스 수: {classes.count()}")
+        
+        # 검색 폼 처리
         if form.is_valid():
-            keyword = form.cleaned_data.get('keyword')
+            form_keyword = form.cleaned_data.get('keyword')
             interest = form.cleaned_data.get('interest')
             
-            if keyword:
+            if form_keyword:
                 classes = classes.filter(
-                    Q(className__icontains=keyword) |
-                    Q(interestID__interestName__icontains=keyword)
+                    Q(className__icontains=form_keyword) |
+                    Q(interestID__interestName__icontains=form_keyword)
                 ).distinct()
             
             if interest:
@@ -106,21 +122,23 @@ def 클래스검색및신청(request):
             classes = classes.order_by('-member_count', '-classID')
         elif sort_by == 'name':
             classes = classes.order_by('className')
-        else:  # recent
+        else:
             classes = classes.order_by('-classID')
         
         # 페이지네이션
-        paginator = Paginator(classes, 12)  # 페이지당 12개
+        paginator = Paginator(classes, 12)
         page_number = request.GET.get('page')
         page_obj = paginator.get_page(page_number)
         
-        # 통계 데이터 - 수정된 버전
+        # 통계 데이터 계산
         total_classes = Class.objects.count()
         total_members = Member.objects.count()
         total_interests = Interests.objects.count()
         total_participants = Sugang.objects.values('member_accountID').distinct().count()
         
-        # 인기 관심사 (상위 10개)
+        print(f"DEBUG: 통계 - 클래스:{total_classes}, 회원:{total_members}, 관심사:{total_interests}, 참여자:{total_participants}")
+        
+        # 인기 관심사
         popular_interests = Interests.objects.annotate(
             class_count=Count('classes', distinct=True)
         ).filter(class_count__gt=0).order_by('-class_count')[:10]
@@ -130,6 +148,7 @@ def 클래스검색및신청(request):
             'classes': page_obj,
             'current_category': category,
             'current_sort': sort_by,
+            'current_keyword': search_keyword,
             'total_classes': total_classes,
             'total_members': total_members,
             'total_interests': total_interests,
@@ -137,27 +156,30 @@ def 클래스검색및신청(request):
             'popular_interests': popular_interests,
         }
         
+        print(f"DEBUG: context 데이터 확인 완료")
         return render(request, 'class_search.html', context)
         
     except Exception as e:
-        print(f"Error in 클래스검색및신청: {e}")
-        messages.error(request, '페이지를 불러오는 중 오류가 발생했습니다.')
+        print(f"DEBUG: Error in 클래스검색및신청: {e}")
+        import traceback
+        traceback.print_exc()
         
-        # 기본 빈 데이터로 페이지 렌더링
+        # 오류 발생 시 기본 데이터
         context = {
             'form': ClassSearchForm(),
-            'classes': [],
+            'classes': Class.objects.none(),
             'current_category': 'all',
-            'current_sort': 'recent',
-            'total_classes': 0,
-            'total_members': 0,
-            'total_interests': 0,
+            'current_sort': 'recent', 
+            'current_keyword': '',
+            'total_classes': Class.objects.count(),
+            'total_members': Member.objects.count(),
+            'total_interests': Interests.objects.count(),
             'total_participants': 0,
             'popular_interests': [],
         }
         return render(request, 'class_search.html', context)
 
-@require_POST
+@require_POST 
 @csrf_exempt
 def 클래스신청(request, class_id):
     """클래스 신청 처리"""
@@ -258,7 +280,7 @@ def 마이페이지(request):
     try:
         member = get_object_or_404(Member, accountID=request.session['member_id'])
         
-        # 관련 데이터 조회 (최적화)
+        # 관련 데이터 조회
         신청클래스들 = Sugang.objects.filter(member_accountID=member).select_related('class_classID')
         작성게시글들 = Post.objects.filter(author=member).select_related('class_classID').order_by('-writeDate')[:10]
         관심사들 = MemberInterests.objects.filter(member=member).select_related('interests')
@@ -332,9 +354,8 @@ def 관심사별_모임(request, interest_id):
         messages.error(request, '관심사별 모임을 불러오는 중 오류가 발생했습니다.')
         return redirect('classes')
 
-# 추가 유틸리티 뷰
 def 홈페이지(request):
-    """홈페이지 - 클래스 검색으로 리다이렉트"""
+    """홈페이지"""
     return redirect('classes')
 
 def 오류페이지(request, exception=None):

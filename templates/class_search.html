@@ -1,4 +1,3 @@
- 
 <!-- templates/class_search.html -->
 {% extends 'base.html' %}
 
@@ -10,7 +9,7 @@
     <h1 class="display-4 fw-bold mb-3">
         <i class="fas fa-users"></i> 우리동네 취미 모임
     </h1>
-    <p class="lead">{{ total_classes }}개 카테고리의 {{ total_members }}명 모임이 기다리고 있어요!</p>
+    <p class="lead">{{ total_interests }}개 카테고리의 {{ total_classes }}개 모임이 기다리고 있어요!</p>
 </div>
 
 <!-- 카테고리별 모임 찾기 -->
@@ -87,7 +86,7 @@
     </div>
     <div class="col-md-3 col-sm-6 mb-3">
         <div class="stats-card">
-            <div class="stats-number">{{ total_participants }}</div>
+            <div class="stats-number">{{ total_interests }}</div>
             <div class="text-muted">관심사 카테고리</div>
         </div>
     </div>
@@ -104,9 +103,14 @@
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
             <h3>
-                <i class="fas fa-fire text-danger"></i> 전체 모임
+                <i class="fas fa-fire text-danger"></i> 
                 {% if current_category != 'all' %}
-                    <span class="badge bg-primary">{{ current_category|title }}</span>
+                    {{ current_category|title }} 모임
+                {% else %}
+                    전체 모임
+                {% endif %}
+                {% if current_keyword %}
+                    <span class="badge bg-info">"{{ current_keyword }}" 검색결과</span>
                 {% endif %}
             </h3>
             <div class="text-muted">
@@ -205,8 +209,24 @@
     <div class="col-12">
         <div class="text-center py-5">
             <i class="fas fa-search fa-4x text-muted mb-3"></i>
-            <h4 class="text-muted">검색 결과가 없습니다</h4>
-            <p class="text-muted">다른 키워드로 검색해보세요!</p>
+            <h4 class="text-muted">
+                {% if current_keyword %}
+                    "{{ current_keyword }}"에 대한 검색 결과가 없습니다
+                {% else %}
+                    {% if current_category != 'all' %}
+                        {{ current_category|title }} 카테고리에 모임이 없습니다
+                    {% else %}
+                        아직 등록된 모임이 없습니다
+                    {% endif %}
+                {% endif %}
+            </h4>
+            <p class="text-muted">
+                {% if current_keyword %}
+                    다른 키워드로 검색해보세요!
+                {% else %}
+                    다른 카테고리를 선택하거나 새로운 모임을 만들어보세요!
+                {% endif %}
+            </p>
             <a href="{% url 'classes' %}" class="btn btn-primary-custom">
                 <i class="fas fa-refresh"></i> 전체 모임 보기
             </a>
@@ -222,7 +242,7 @@
         <ul class="pagination pagination-lg">
             {% if classes.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ classes.previous_page_number }}&category={{ current_category }}&sort={{ current_sort }}">
+                    <a class="page-link" href="?page={{ classes.previous_page_number }}&category={{ current_category }}&sort={{ current_sort }}&keyword={{ current_keyword }}">
                         <i class="fas fa-chevron-left"></i> 이전
                     </a>
                 </li>
@@ -235,14 +255,14 @@
                     </li>
                 {% elif num > classes.number|add:'-3' and num < classes.number|add:'3' %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ num }}&category={{ current_category }}&sort={{ current_sort }}">{{ num }}</a>
+                        <a class="page-link" href="?page={{ num }}&category={{ current_category }}&sort={{ current_sort }}&keyword={{ current_keyword }}">{{ num }}</a>
                     </li>
                 {% endif %}
             {% endfor %}
             
             {% if classes.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ classes.next_page_number }}&category={{ current_category }}&sort={{ current_sort }}">
+                    <a class="page-link" href="?page={{ classes.next_page_number }}&category={{ current_category }}&sort={{ current_sort }}&keyword={{ current_keyword }}">
                         다음 <i class="fas fa-chevron-right"></i>
                     </a>
                 </li>
@@ -257,9 +277,28 @@
     {% csrf_token %}
 </form>
 
+<!-- 디버그 정보 (개발 중에만 표시) -->
+{% if debug %}
+<div class="mt-5 p-3 bg-light border rounded">
+    <h6>DEBUG 정보:</h6>
+    <p>current_category: {{ current_category }}</p>
+    <p>current_keyword: {{ current_keyword }}</p>
+    <p>total_classes: {{ total_classes }}</p>
+    <p>total_members: {{ total_members }}</p>
+    <p>total_interests: {{ total_interests }}</p>
+    <p>classes.count: {{ classes.paginator.count }}</p>
+</div>
+{% endif %}
+
 <script>
+console.log("=== DEBUG: class_search.html 스크립트 로드됨 ===");
+console.log("총 클래스:", {{ total_classes }});
+console.log("총 회원:", {{ total_members }});
+console.log("총 관심사:", {{ total_interests }});
+
 // 모임 신청 함수
 function applyClass(classId) {
+    console.log("applyClass 호출됨, classId:", classId);
     {% if request.session.member_id %}
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
@@ -291,6 +330,7 @@ function applyClass(classId) {
 
 // 모임 공유 함수
 function shareClass(classId) {
+    console.log("shareClass 호출됨, classId:", classId);
     const url = window.location.href;
     const text = `흥미로운 모임을 발견했어요! 함께 참여해보세요!`;
     
@@ -309,12 +349,16 @@ function shareClass(classId) {
 
 // 관심 모임 추가/제거
 function favoriteClass(classId) {
+    console.log("favoriteClass 호출됨, classId:", classId);
     alert('💝 관심 모임 기능은 준비 중입니다!');
 }
 
 // 페이지 로드 애니메이션
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOMContentLoaded 이벤트 발생");
     const cards = document.querySelectorAll('.card-custom');
+    console.log("찾은 카드 수:", cards.length);
+    
     cards.forEach((card, index) => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';
