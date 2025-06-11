@@ -1,537 +1,447 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>출석 체크 - {{ class.className }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #4285F4;
-            --secondary-color: #34A853;
-            --success-color: #28a745;
-            --warning-color: #ffc107;
-            --danger-color: #dc3545;
-            --info-color: #17a2b8;
-        }
-        
-        .attendance-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 40px 0;
-            border-radius: 0 0 30px 30px;
-        }
-        
-        .attendance-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            margin-bottom: 20px;
-        }
-        
-        .member-row {
-            border-bottom: 1px solid #e9ecef;
-            padding: 20px;
-            transition: all 0.3s ease;
-        }
-        
-        .member-row:last-child {
-            border-bottom: none;
-        }
-        
-        .member-row:hover {
-            background: #f8f9fa;
-        }
-        
-        .member-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--primary-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-        
-        .attendance-btn {
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 10px 20px;
-            margin: 0 5px;
-            transition: all 0.3s ease;
-            min-width: 80px;
-        }
-        
-        .attendance-btn.active {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn-present.active {
-            background: var(--success-color);
-            border-color: var(--success-color);
-            color: white;
-        }
-        
-        .btn-late.active {
-            background: var(--warning-color);
-            border-color: var(--warning-color);
-            color: black;
-        }
-        
-        .btn-absent.active {
-            background: var(--danger-color);
-            border-color: var(--danger-color);
-            color: white;
-        }
-        
-        .btn-excused.active {
-            background: var(--info-color);
-            border-color: var(--info-color);
-            color: white;
-        }
-        
-        .date-selector {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            margin-bottom: 30px;
-        }
-        
-        .submit-btn {
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
-            border: none;
-            border-radius: 25px;
-            padding: 15px 40px;
-            color: white;
-            font-weight: bold;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-        }
-        
-        .submit-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(66, 133, 244, 0.3);
-            color: white;
-        }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
-        }
-        
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            display: block;
-        }
-        
-        .recent-attendance {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-    </style>
-</head>
-<body class="bg-light">
-    <!-- 네비게이션 -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
-                <i class="fas fa-users text-primary"></i> 소모임
-            </a>
-            
-            <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'classes' %}">모임 찾기</a>
-                <a class="nav-link" href="{% url 'mypage' %}">마이페이지</a>
-                <a class="nav-link" href="{% url 'logout' %}">로그아웃</a>
-            </div>
-        </div>
-    </nav>
+<!-- templates/attendance.html -->
+{% extends 'base.html' %}
 
-    <!-- 헤더 -->
-    <section class="attendance-header">
-        <div class="container">
-            <nav aria-label="breadcrumb" class="mb-3">
-                <ol class="breadcrumb text-white-50">
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'classes' %}" class="text-white-50 text-decoration-none">모임</a>
-                    </li>
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'post_list' class.classID %}" class="text-white-50 text-decoration-none">
-                            {{ class.className }}
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active text-white">출석 체크</li>
-                </ol>
-            </nav>
-            
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="display-6 fw-bold mb-2">
-                        <i class="fas fa-calendar-check"></i> 출석 체크
-                    </h1>
-                    <h3 class="mb-3">{{ class.className }}</h3>
-                    <div class="d-flex gap-3">
-                        <span class="badge bg-light text-dark">
-                            <i class="fas fa-users"></i> {{ 수강생들|length }}명 참여
-                        </span>
-                        <span class="badge bg-light text-dark">
-                            <i class="fas fa-calendar"></i> {{ class.classStartDate }} ~ {{ class.classEndDate }}
-                        </span>
+{% block title %}출석체크 - {{ class.className }}{% endblock %}
+
+{% block content %}
+<!-- 네비게이션 -->
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'meeting_app:classes' %}">모임</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'meeting_app:post_list' class.classID %}">{{ class.className }}</a>
+                </li>
+                <li class="breadcrumb-item active">출석체크</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- 모임 정보 헤더 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-calendar-check"></i> {{ class.className }} 출석체크
+                        </h4>
+                        <p class="text-muted mb-0">
+                            <i class="fas fa-tag"></i> {{ class.interestID.interestName }}
+                            <span class="ms-3">
+                                <i class="fas fa-calendar"></i> {{ class.classStartDate }} ~ {{ class.classEndDate }}
+                            </span>
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'meeting_app:post_list' class.classID %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-arrow-left"></i> 게시판으로
+                            </a>
+                            <a href="{% url 'meeting_app:classes' %}" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-search"></i> 모임 목록
+                            </a>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-4 text-md-end">
-                    <a href="{% url 'post_list' class.classID %}" class="btn btn-light">
-                        <i class="fas fa-arrow-left"></i> 모임으로 돌아가기
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 출석체크 폼 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-users"></i> 수강생 출석체크
+                    <span class="badge bg-primary ms-2">{{ 수강생들|length }}명</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if 수강생들 %}
+                <form method="post" id="attendanceForm">
+                    {% csrf_token %}
+                    
+                    <!-- 출석일 선택 -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="date" class="form-control" id="attendanceDate" name="date" 
+                                       value="{% now 'Y-m-d' %}" required>
+                                <label for="attendanceDate">
+                                    <i class="fas fa-calendar-alt me-2"></i>출석일
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="markAllPresent()">
+                                    <i class="fas fa-check"></i> 전체 출석
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="markAllLate()">
+                                    <i class="fas fa-clock"></i> 전체 지각
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="markAllAbsent()">
+                                    <i class="fas fa-times"></i> 전체 결석
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 수강생 목록 -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="width: 5%">#</th>
+                                    <th style="width: 20%">이름</th>
+                                    <th style="width: 25%">연락처</th>
+                                    <th style="width: 25%">이메일</th>
+                                    <th style="width: 25%">출석상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for 수강생 in 수강생들 %}
+                                <tr class="attendance-row" data-member-id="{{ 수강생.member_accountID.accountID }}">
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-sm me-2">
+                                                {{ 수강생.member_accountID.name|first }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ 수강생.member_accountID.name }}</div>
+                                                <small class="text-muted">{{ 수강생.member_accountID.accountType|capfirst }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-phone text-muted me-1"></i>
+                                        {{ 수강생.member_accountID.phoneNum }}
+                                    </td>
+                                    <td>
+                                        <i class="fas fa-envelope text-muted me-1"></i>
+                                        {{ 수강생.member_accountID.email }}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group" data-bs-toggle="buttons">
+                                            <input type="radio" class="btn-check" name="attendance_{{ 수강생.sugangID }}" 
+                                                   id="present_{{ 수강생.sugangID }}" value="present">
+                                            <label class="btn btn-outline-success btn-sm" for="present_{{ 수강생.sugangID }}">
+                                                <i class="fas fa-check"></i> 출석
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" name="attendance_{{ 수강생.sugangID }}" 
+                                                   id="late_{{ 수강생.sugangID }}" value="late">
+                                            <label class="btn btn-outline-warning btn-sm" for="late_{{ 수강생.sugangID }}">
+                                                <i class="fas fa-clock"></i> 지각
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" name="attendance_{{ 수강생.sugangID }}" 
+                                                   id="absent_{{ 수강생.sugangID }}" value="absent">
+                                            <label class="btn btn-outline-danger btn-sm" for="absent_{{ 수강생.sugangID }}">
+                                                <i class="fas fa-times"></i> 결석
+                                            </label>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 저장 버튼 -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                출석일과 각 수강생의 출석상태를 선택한 후 저장하세요.
+                            </small>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="resetForm()">
+                                <i class="fas fa-undo"></i> 초기화
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> 출석 저장
+                            </button>
+                        </div>
+                    </div>
+                </form>
+                
+                {% else %}
+                <!-- 수강생이 없는 경우 -->
+                <div class="text-center py-5">
+                    <i class="fas fa-user-slash fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">등록된 수강생이 없습니다</h5>
+                    <p class="text-muted">먼저 수강생들이 모임에 참여해야 출석체크를 할 수 있어요.</p>
+                    <a href="{% url 'meeting_app:post_list' class.classID %}" class="btn btn-primary">
+                        <i class="fas fa-arrow-left"></i> 게시판으로 돌아가기
                     </a>
                 </div>
+                {% endif %}
             </div>
         </div>
-    </section>
+    </div>
+</div>
 
-    <!-- 메시지 -->
-    {% if messages %}
-        <div class="container mt-3">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <!-- 출석 체크 메인 -->
-    <section class="py-5">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-8">
-                    <!-- 날짜 선택 -->
-                    <div class="date-selector">
-                        <form method="post" id="attendanceForm">
-                            {% csrf_token %}
-                            <div class="row align-items-center mb-4">
-                                <div class="col-md-6">
-                                    <h5 class="mb-0">
-                                        <i class="fas fa-calendar text-primary"></i> 출석일 선택
-                                    </h5>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="input-group">
-                                        <input type="date" name="attend_date" id="attend_date" 
-                                               class="form-control" value="{{ today|date:'Y-m-d' }}" 
-                                               max="{{ today|date:'Y-m-d' }}" required>
-                                        <button type="button" class="btn btn-outline-primary" 
-                                                onclick="setToday()">
-                                            <i class="fas fa-calendar-day"></i> 오늘
-                                        </button>
-                                    </div>
-                                </div>
+<!-- 출석 통계 (기존 출석 데이터가 있는 경우) -->
+{% if 수강생들 %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> 출석 통계 안내
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="stats-mini">
+                            <div class="stats-number text-success">
+                                <i class="fas fa-check fa-2x"></i>
                             </div>
-
-                            <!-- 출석 현황 안내 -->
-                            <div class="alert alert-info" role="alert">
-                                <i class="fas fa-info-circle"></i>
-                                <strong>출석 체크 방법:</strong> 각 회원의 출석 상태를 선택한 후 '출석 저장' 버튼을 클릭하세요.
-                            </div>
-
-                            <!-- 회원 목록 -->
-                            <div class="attendance-card">
-                                <div class="card-header bg-transparent">
-                                    <div class="row align-items-center">
-                                        <div class="col-md-6">
-                                            <h6 class="mb-0">
-                                                <i class="fas fa-users text-primary"></i> 
-                                                참여 회원 ({{ 수강생들|length }}명)
-                                            </h6>
-                                        </div>
-                                        <div class="col-md-6 text-md-end">
-                                            <div class="btn-group btn-group-sm" role="group">
-                                                <button type="button" class="btn btn-outline-success" 
-                                                        onclick="setAllAttendance('present')">
-                                                    <i class="fas fa-check"></i> 전체 출석
-                                                </button>
-                                                <button type="button" class="btn btn-outline-danger" 
-                                                        onclick="setAllAttendance('absent')">
-                                                    <i class="fas fa-times"></i> 전체 결석
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                {% for 수강생 in 수강생들 %}
-                                    <div class="member-row">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-4">
-                                                <div class="d-flex align-items-center">
-                                                    <div class="member-avatar me-3">
-                                                        {{ 수강생.member_accountID.name|slice:":1" }}
-                                                    </div>
-                                                    <div>
-                                                        <h6 class="mb-1">{{ 수강생.member_accountID.name }}</h6>
-                                                        <small class="text-muted">
-                                                            {{ 수강생.member_accountID.get_accountType_display }}
-                                                        </small>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <div class="attendance-buttons text-md-end">
-                                                    <input type="radio" class="btn-check" 
-                                                           name="attendance_{{ 수강생.sugangID }}" 
-                                                           id="present_{{ 수강생.sugangID }}" 
-                                                           value="present">
-                                                    <label class="btn attendance-btn btn-present" 
-                                                           for="present_{{ 수강생.sugangID }}">
-                                                        <i class="fas fa-check"></i> 출석
-                                                    </label>
-
-                                                    <input type="radio" class="btn-check" 
-                                                           name="attendance_{{ 수강생.sugangID }}" 
-                                                           id="late_{{ 수강생.sugangID }}" 
-                                                           value="late">
-                                                    <label class="btn attendance-btn btn-late" 
-                                                           for="late_{{ 수강생.sugangID }}">
-                                                        <i class="fas fa-clock"></i> 지각
-                                                    </label>
-
-                                                    <input type="radio" class="btn-check" 
-                                                           name="attendance_{{ 수강생.sugangID }}" 
-                                                           id="absent_{{ 수강생.sugangID }}" 
-                                                           value="absent">
-                                                    <label class="btn attendance-btn btn-absent" 
-                                                           for="absent_{{ 수강생.sugangID }}">
-                                                        <i class="fas fa-times"></i> 결석
-                                                    </label>
-
-                                                    <input type="radio" class="btn-check" 
-                                                           name="attendance_{{ 수강생.sugangID }}" 
-                                                           id="excused_{{ 수강생.sugangID }}" 
-                                                           value="excused">
-                                                    <label class="btn attendance-btn btn-excused" 
-                                                           for="excused_{{ 수강생.sugangID }}">
-                                                        <i class="fas fa-exclamation"></i> 사유결석
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% empty %}
-                                    <div class="text-center py-5">
-                                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                                        <h5 class="text-muted">참여 회원이 없습니다</h5>
-                                        <p class="text-muted">아직 모임에 참여한 회원이 없습니다.</p>
-                                    </div>
-                                {% endfor %}
-                            </div>
-
-                            <!-- 제출 버튼 -->
-                            {% if 수강생들 %}
-                                <div class="text-center mt-4">
-                                    <button type="submit" class="submit-btn">
-                                        <i class="fas fa-save"></i> 출석 저장
-                                    </button>
-                                </div>
-                            {% endif %}
-                        </form>
-                    </div>
-                </div>
-
-                <!-- 사이드바 -->
-                <div class="col-lg-4">
-                    <!-- 출석 통계 -->
-                    <div class="attendance-card">
-                        <div class="card-header bg-transparent">
-                            <h6 class="mb-0">
-                                <i class="fas fa-chart-bar text-primary"></i> 출석 통계
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="stats-grid">
-                                <div class="stat-card">
-                                    <span class="stat-number text-primary">{{ 수강생들|length }}</span>
-                                    <small class="text-muted">총 회원</small>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-number text-success">0</span>
-                                    <small class="text-muted">출석</small>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-number text-warning">0</span>
-                                    <small class="text-muted">지각</small>
-                                </div>
-                                <div class="stat-card">
-                                    <span class="stat-number text-danger">0</span>
-                                    <small class="text-muted">결석</small>
-                                </div>
-                            </div>
+                            <div class="text-muted small">출석</div>
                         </div>
                     </div>
-
-                    <!-- 최근 출석 기록 -->
-                    {% if recent_attendance %}
-                        <div class="attendance-card">
-                            <div class="card-header bg-transparent">
-                                <h6 class="mb-0">
-                                    <i class="fas fa-history text-primary"></i> 최근 출석 기록
-                                </h6>
+                    <div class="col-md-3">
+                        <div class="stats-mini">
+                            <div class="stats-number text-warning">
+                                <i class="fas fa-clock fa-2x"></i>
                             </div>
-                            <div class="card-body p-0">
-                                <div class="recent-attendance">
-                                    {% for attendance in recent_attendance %}
-                                        <div class="list-group-item list-group-item-action border-0">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div>
-                                                    <h6 class="mb-1">{{ attendance.sugang_sugangID.member_accountID.name }}</h6>
-                                                    <small class="text-muted">{{ attendance.attendDate }}</small>
-                                                </div>
-                                                <div>
-                                                    {% if attendance.attendanceStatus == 'present' %}
-                                                        <span class="badge bg-success">출석</span>
-                                                    {% elif attendance.attendanceStatus == 'late' %}
-                                                        <span class="badge bg-warning text-dark">지각</span>
-                                                    {% elif attendance.attendanceStatus == 'absent' %}
-                                                        <span class="badge bg-danger">결석</span>
-                                                    {% else %}
-                                                        <span class="badge bg-info">사유결석</span>
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
+                            <div class="text-muted small">지각</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-mini">
+                            <div class="stats-number text-danger">
+                                <i class="fas fa-times fa-2x"></i>
                             </div>
+                            <div class="text-muted small">결석</div>
                         </div>
-                    {% endif %}
-
-                    <!-- 출석 가이드 -->
-                    <div class="attendance-card">
-                        <div class="card-header bg-transparent">
-                            <h6 class="mb-0">
-                                <i class="fas fa-question-circle text-primary"></i> 출석 기준
-                            </h6>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-unstyled mb-0">
-                                <li class="mb-2">
-                                    <span class="badge bg-success me-2">출석</span>
-                                    정시에 참여
-                                </li>
-                                <li class="mb-2">
-                                    <span class="badge bg-warning text-dark me-2">지각</span>
-                                    늦게 참여
-                                </li>
-                                <li class="mb-2">
-                                    <span class="badge bg-danger me-2">결석</span>
-                                    참여하지 않음
-                                </li>
-                                <li class="mb-0">
-                                    <span class="badge bg-info me-2">사유결석</span>
-                                    사전 연락 후 불참
-                                </li>
-                            </ul>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stats-mini">
+                            <div class="stats-number text-primary">
+                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                            <div class="text-muted small">총 인원</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</div>
+{% endif %}
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// 전체 출석 처리
+function markAllPresent() {
+    document.querySelectorAll('input[value="present"]').forEach(input => {
+        input.checked = true;
+        updateRowStyle(input.closest('tr'), 'present');
+    });
+}
+
+// 전체 지각 처리
+function markAllLate() {
+    document.querySelectorAll('input[value="late"]').forEach(input => {
+        input.checked = true;
+        updateRowStyle(input.closest('tr'), 'late');
+    });
+}
+
+// 전체 결석 처리
+function markAllAbsent() {
+    document.querySelectorAll('input[value="absent"]').forEach(input => {
+        input.checked = true;
+        updateRowStyle(input.closest('tr'), 'absent');
+    });
+}
+
+// 폼 초기화
+function resetForm() {
+    document.querySelectorAll('input[type="radio"]').forEach(input => {
+        input.checked = false;
+    });
+    document.querySelectorAll('.attendance-row').forEach(row => {
+        row.className = 'attendance-row';
+    });
+}
+
+// 행 스타일 업데이트
+function updateRowStyle(row, status) {
+    row.classList.remove('table-success', 'table-warning', 'table-danger');
+    if (status === 'present') {
+        row.classList.add('table-success');
+    } else if (status === 'late') {
+        row.classList.add('table-warning');
+    } else if (status === 'absent') {
+        row.classList.add('table-danger');
+    }
+}
+
+// 라디오 버튼 변경 감지
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[type="radio"]').forEach(input => {
+        input.addEventListener('change', function() {
+            const row = this.closest('tr');
+            updateRowStyle(row, this.value);
+        });
+    });
     
-    <script>
-        // 오늘 날짜 설정
-        function setToday() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('attend_date').value = today;
+    // 폼 제출 유효성 검사
+    document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+        const date = document.getElementById('attendanceDate').value;
+        if (!date) {
+            e.preventDefault();
+            alert('출석일을 선택해주세요.');
+            return;
         }
-
-        // 전체 출석 상태 설정
-        function setAllAttendance(status) {
-            const radioButtons = document.querySelectorAll(`input[value="${status}"]`);
-            radioButtons.forEach(radio => {
-                radio.checked = true;
-                // 버튼 스타일 업데이트를 위한 이벤트 트리거
-                radio.dispatchEvent(new Event('change'));
-            });
-            updateStats();
+        
+        // 모든 수강생의 출석상태가 선택되었는지 확인
+        const memberCount = {{ 수강생들|length }};
+        const checkedCount = document.querySelectorAll('input[type="radio"]:checked').length;
+        
+        if (checkedCount === 0) {
+            e.preventDefault();
+            alert('최소 한 명의 출석상태는 선택해야 합니다.');
+            return;
         }
-
-        // 출석 통계 업데이트
-        function updateStats() {
-            const presentCount = document.querySelectorAll('input[value="present"]:checked').length;
-            const lateCount = document.querySelectorAll('input[value="late"]:checked').length;
-            const absentCount = document.querySelectorAll('input[value="absent"]:checked').length;
-            const excusedCount = document.querySelectorAll('input[value="excused"]:checked').length;
-
-            // 통계 카드 업데이트
-            const statCards = document.querySelectorAll('.stat-card .stat-number');
-            if (statCards.length >= 4) {
-                statCards[1].textContent = presentCount;
-                statCards[2].textContent = lateCount;
-                statCards[3].textContent = absentCount;
-            }
-        }
-
-        // 폼 제출 시 확인
-        document.getElementById('attendanceForm').addEventListener('submit', function(e) {
-            const attendDate = document.getElementById('attend_date').value;
-            if (!attendDate) {
-                e.preventDefault();
-                alert('출석일을 선택해주세요.');
-                return;
-            }
-
-            const checkedInputs = document.querySelectorAll('input[type="radio"]:checked').length;
-            const totalMembers = {{ 수강생들|length }};
-
-            if (checkedInputs === 0) {
-                e.preventDefault();
-                alert('최소 한 명의 출석 상태를 선택해주세요.');
-                return;
-            }
-
-            if (checkedInputs < totalMembers) {
-                if (!confirm(`${totalMembers - checkedInputs}명의 출석 상태가 선택되지 않았습니다. 계속하시겠습니까?`)) {
-                    e.preventDefault();
-                    return;
-                }
-            }
-
-            if (!confirm(`${attendDate} 출석을 저장하시겠습니까?`)) {
+        
+        if (checkedCount < memberCount) {
+            if (!confirm(`일부 수강생(${memberCount - checkedCount}명)의 출석상태가 선택되지 않았습니다.\n그래도 저장하시겠습니까?`)) {
                 e.preventDefault();
                 return;
             }
-        });
+        }
+    });
+});
 
-        // 출석 상태 변경 시 통계 업데이트
-        document.addEventListener('change', function(e) {
-            if (e.target.type === 'radio' && e.target.name.startsWith('attendance_')) {
-                updateStats();
-            }
-        });
+// 키보드 단축키
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey) {
+        switch(e.key) {
+            case '1':
+                e.preventDefault();
+                markAllPresent();
+                break;
+            case '2':
+                e.preventDefault();
+                markAllLate();
+                break;
+            case '3':
+                e.preventDefault();
+                markAllAbsent();
+                break;
+            case 'r':
+                e.preventDefault();
+                resetForm();
+                break;
+        }
+    }
+});
+</script>
 
-        // 페이지 로드 시 통계 초기화
-        document.addEventListener('DOMContentLoaded', function() {
-            updateStats();
-        });
-    </script>
-</body>
-</html>
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4285F4, #34A853);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.attendance-row {
+    transition: all 0.3s ease;
+}
+
+.attendance-row:hover {
+    background-color: rgba(0,0,0,0.05) !important;
+}
+
+.btn-group .btn {
+    border-radius: 6px;
+    margin: 0 1px;
+}
+
+.stats-mini {
+    padding: 1rem;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.form-floating label {
+    padding-left: 2.5rem;
+}
+
+.form-floating input {
+    padding-left: 2.5rem;
+}
+
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.9rem;
+    }
+    
+    .btn-group {
+        flex-direction: column;
+    }
+    
+    .btn-group .btn {
+        margin: 1px 0;
+        border-radius: 4px;
+    }
+    
+    .d-flex.justify-content-between {
+        flex-direction: column;
+        gap: 1rem;
+    }
+}
+
+/* 출석상태별 행 색상 */
+.table-success {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.table-warning {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.table-danger {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+/* 키보드 단축키 안내 */
+.card-body::after {
+    content: "💡 키보드 단축키: Ctrl+1(전체출석), Ctrl+2(전체지각), Ctrl+3(전체결석), Ctrl+R(초기화)";
+    display: block;
+    margin-top: 1rem;
+    padding: 0.5rem;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #6c757d;
+    text-align: center;
+}
+</style>
+{% endblock %}

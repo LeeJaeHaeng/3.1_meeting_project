@@ -3,12 +3,12 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils import timezone
-from .models import *
+from .models import * # 모든 모델 임포트
 
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
-    list_display = ['accountID', 'name', 'email', 'accountType', 'joinDate', 'member_classes_count']
-    list_filter = ['accountType', 'joinDate']
+    list_display = ['accountID', 'name', 'email', 'accountType', 'joinDate', 'member_classes_count', 'is_active']
+    list_filter = ['accountType', 'joinDate', 'is_active']
     search_fields = ['accountID', 'name', 'email', 'phoneNum']
     readonly_fields = ['joinDate']
     list_per_page = 25
@@ -18,13 +18,15 @@ class MemberAdmin(admin.ModelAdmin):
             'fields': ('accountID', 'name', 'email', 'phoneNum', 'birth')
         }),
         ('계정 정보', {
-            'fields': ('password', 'accountType', 'joinDate')
+            'fields': ('password', 'accountType', 'is_active', 'last_login', 'joinDate')
         }),
     )
     
     def member_classes_count(self, obj):
         """참여 클래스 수"""
-        count = obj.sugang_set.filter(is_active=True).count()
+        # Sugang 모델에 is_active 필드가 없으므로, obj.sugang_set.count()만 사용합니다.
+        # 만약 Sugang 모델에 '승인됨' 상태만 세고 싶다면 .filter(status='approved')를 사용합니다.
+        count = obj.sugang_set.count() 
         return format_html(
             '<span style="color: #007cba;">{} 개</span>',
             count
@@ -36,16 +38,17 @@ class MemberAdmin(admin.ModelAdmin):
 
 @admin.register(Interests)
 class InterestsAdmin(admin.ModelAdmin):
-    list_display = ['interestID', 'interestName', 'class_count', 'created_at']
+    list_display = ['interestID', 'interestName', 'class_count', 'is_active', 'created_date'] # 'created_at' -> 'created_date', 'is_active' 추가
+    list_filter = ['is_active', 'created_date'] # 'created_at' -> 'created_date'
     search_fields = ['interestName', 'description']
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_date'] # 'created_at' -> 'created_date'
     list_per_page = 30
     
     def class_count(self, obj):
         """관련 클래스 수"""
         count = obj.classes.count()
         if count > 0:
-            url = reverse('admin:meeting_app_class_changelist') + f'?interestID__id__exact={obj.interestID}'
+            url = reverse('admin:meeting_app_class_changelist') + f'?interestID__interestID__exact={obj.interestID}' 
             return format_html(
                 '<a href="{}" style="color: #007cba;">{} 개</a>',
                 url, count
@@ -58,37 +61,40 @@ class InterestsAdmin(admin.ModelAdmin):
 
 @admin.register(Class)
 class ClassAdmin(admin.ModelAdmin):
-    list_display = ['classID', 'className', 'interestID', 'instructor', 'member_count', 
-                   'classStartDate', 'classEndDate', 'status', 'created_at']
-    list_filter = ['classStartDate', 'classEndDate', 'interestID', 'instructor__accountType']
-    search_fields = ['className', 'classDescription', 'instructor__name']
+    # 'instructor' 필드는 Class 모델에 직접적인 필드가 없으므로 삭제했습니다.
+    # classDescription -> description, maxMembers -> max_members, created_at -> created_date
+    list_display = ['classID', 'className', 'interestID', 'member_count', 
+                   'classStartDate', 'classEndDate', 'status', 'is_active', 'created_date'] # 'created_at' -> 'created_date', 'is_active' 추가
+    # 'instructor__accountType'는 Class 모델에 instructor 필드가 없으므로 제거
+    list_filter = ['classStartDate', 'classEndDate', 'interestID', 'is_active'] # 'instructor__accountType' 제거, 'is_active' 추가
+    search_fields = ['className', 'description'] # 'classDescription' -> 'description', 'instructor__name' 제거
     date_hierarchy = 'classStartDate'
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_date'] # 'created_at' -> 'created_date'
     list_per_page = 20
     
     fieldsets = (
         ('기본 정보', {
-            'fields': ('className', 'classDescription', 'interestID', 'instructor')
+            'fields': ('className', 'description', 'interestID') # 'classDescription' -> 'description', 'instructor' 제거
         }),
         ('일정 및 정원', {
-            'fields': ('classStartDate', 'classEndDate', 'maxMembers')
+            'fields': ('classStartDate', 'classEndDate', 'max_members', 'is_active') # 'maxMembers' -> 'max_members', 'is_active' 추가
         }),
         ('시스템 정보', {
-            'fields': ('created_at',),
+            'fields': ('created_date',), # 'created_at' -> 'created_date'
             'classes': ('collapse',)
         }),
     )
     
     def member_count(self, obj):
         """참여 회원 수"""
-        count = obj.member_count
+        count = obj.member_count # obj.member_count @property를 사용
         if count > 0:
-            url = reverse('admin:meeting_app_sugang_changelist') + f'?class_classID__id__exact={obj.classID}'
+            url = reverse('admin:meeting_app_sugang_changelist') + f'?class_classID__classID__exact={obj.classID}' 
             return format_html(
                 '<a href="{}" style="color: #007cba;">{}/{}</a>',
-                url, count, obj.maxMembers
+                url, count, obj.max_members 
             )
-        return f'0/{obj.maxMembers}'
+        return f'0/{obj.max_members}' 
     member_count.short_description = '참여인원'
     
     def status(self, obj):
@@ -104,17 +110,17 @@ class ClassAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related(
-            'interestID', 'instructor'
+            'interestID' 
         ).prefetch_related('sugang_set')
 
 @admin.register(Post)
 class PostAdmin(admin.ModelAdmin):
     list_display = ['postID', 'title', 'category', 'author', 'class_classID', 
-                   'views', 'is_pinned', 'writeDate']
+                   'views', 'is_pinned', 'writeDate'] # 'view_count' -> 'views'
     list_filter = ['category', 'writeDate', 'is_pinned', 'class_classID']
     search_fields = ['title', 'content', 'author__name']
     date_hierarchy = 'writeDate'
-    readonly_fields = ['writeDate', 'updateDate', 'views']
+    readonly_fields = ['writeDate', 'updateDate', 'views'] # 'view_count' -> 'views'
     list_per_page = 25
     
     fieldsets = (
@@ -125,7 +131,7 @@ class PostAdmin(admin.ModelAdmin):
             'fields': ('author', 'class_classID')
         }),
         ('시스템 정보', {
-            'fields': ('writeDate', 'updateDate', 'views'),
+            'fields': ('writeDate', 'updateDate', 'views'), # 'view_count' -> 'views'
             'classes': ('collapse',)
         }),
     )
@@ -137,8 +143,8 @@ class PostAdmin(admin.ModelAdmin):
 
 @admin.register(Sugang)
 class SugangAdmin(admin.ModelAdmin):
-    list_display = ['sugangID', 'member_name', 'class_name', 'registration_date', 'is_active']
-    list_filter = ['registration_date', 'is_active', 'class_classID']
+    list_display = ['sugangID', 'member_name', 'class_name', 'registration_date', 'status'] # 'is_active' 제거, 'status' 추가
+    list_filter = ['registration_date', 'status', 'class_classID'] # 'is_active' 제거, 'status' 추가
     search_fields = ['member_accountID__name', 'class_classID__className']
     date_hierarchy = 'registration_date'
     readonly_fields = ['registration_date']
@@ -170,12 +176,12 @@ class SugangAdmin(admin.ModelAdmin):
 @admin.register(Attendance)
 class AttendanceAdmin(admin.ModelAdmin):
     list_display = ['attendanceID', 'member_name', 'class_name', 'attendDate', 
-                   'attendanceStatus', 'created_at']
-    list_filter = ['attendanceStatus', 'attendDate', 'created_at']
+                   'attendanceStatus', 'created_date'] # 'created_at' -> 'created_date'
+    list_filter = ['attendanceStatus', 'attendDate', 'created_date'] # 'created_at' -> 'created_date'
     search_fields = ['sugang_sugangID__member_accountID__name', 
                     'sugang_sugangID__class_classID__className']
     date_hierarchy = 'attendDate'
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_date'] # 'created_at' -> 'created_date'
     list_per_page = 50
     
     def member_name(self, obj):
@@ -196,10 +202,10 @@ class AttendanceAdmin(admin.ModelAdmin):
 
 @admin.register(MemberInterests)
 class MemberInterestsAdmin(admin.ModelAdmin):
-    list_display = ['id', 'member_name', 'interest_name', 'created_at']
-    list_filter = ['interests', 'created_at']
+    list_display = ['id', 'member_name', 'interest_name', 'created_date'] # 'created_at' -> 'created_date'
+    list_filter = ['interests', 'created_date'] # 'created_at' -> 'created_date'
     search_fields = ['member__name', 'interests__interestName']
-    readonly_fields = ['created_at']
+    readonly_fields = ['created_date'] # 'created_at' -> 'created_date'
     list_per_page = 40
     
     def member_name(self, obj):

@@ -87,17 +87,17 @@
     <!-- 네비게이션 -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+            <a class="navbar-brand fw-bold" href="{% url 'meeting_app:home' %}">
                 <i class="fas fa-users text-primary"></i> 소모임
             </a>
             
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'classes' %}">모임 찾기</a>
+                <a class="nav-link" href="{% url 'meeting_app:classes' %}">모임 찾기</a>
                 {% if user_name %}
-                    <a class="nav-link" href="{% url 'mypage' %}">마이페이지</a>
-                    <a class="nav-link" href="{% url 'logout' %}">로그아웃</a>
+                    <a class="nav-link" href="{% url 'meeting_app:mypage' %}">마이페이지</a>
+                    <a class="nav-link" href="{% url 'meeting_app:logout' %}">로그아웃</a>
                 {% else %}
-                    <a class="nav-link" href="{% url 'login' %}">로그인</a>
+                    <a class="nav-link" href="{% url 'meeting_app:login' %}">로그인</a>
                 {% endif %}
             </div>
         </div>
@@ -111,7 +111,7 @@
                     <nav aria-label="breadcrumb" class="mb-3">
                         <ol class="breadcrumb text-white-50">
                             <li class="breadcrumb-item">
-                                <a href="{% url 'classes' %}" class="text-white-50 text-decoration-none">모임</a>
+                                <a href="{% url 'meeting_app:classes' %}" class="text-white-50 text-decoration-none">모임</a>
                             </li>
                             <li class="breadcrumb-item active text-white">{{ class.className }}</li>
                         </ol>
@@ -132,7 +132,7 @@
                 </div>
                 <div class="col-md-4 text-md-end">
                     {% if is_member %}
-                        <a href="{% url 'post_create' class.classID %}" class="btn btn-write">
+                        <a href="{% url 'meeting_app:post_create' class.classID %}" class="btn btn-write">
                             <i class="fas fa-pen"></i> 글쓰기
                         </a>
                     {% else %}
@@ -180,13 +180,13 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search"></i> 검색
                         </button>
-                        <a href="{% url 'post_list' class.classID %}" class="btn btn-outline-secondary">
+                        <a href="{% url 'meeting_app:post_list' class.classID %}" class="btn btn-outline-secondary">
                             <i class="fas fa-undo"></i> 초기화
                         </a>
                     </div>
                     <div class="col-md-2 text-end">
                         {% if is_member %}
-                            <a href="{% url 'post_create' class.classID %}" class="btn btn-write">
+                            <a href="{% url 'meeting_app:post_create' class.classID %}" class="btn btn-write">
                                 <i class="fas fa-pen"></i> 글쓰기
                             </a>
                         {% endif %}
@@ -258,7 +258,7 @@
                                             {% endif %}
                                             
                                             <h5 class="mb-0">
-                                                <a href="{% url 'post_detail' post.postID %}" 
+                                                <a href="{% url 'meeting_app:post_detail' post.postID %}" 
                                                    class="text-decoration-none text-dark">
                                                     {{ post.title }}
                                                 </a>
@@ -282,7 +282,7 @@
                                     </div>
                                     
                                     <div class="col-md-4 text-md-end">
-                                        <a href="{% url 'post_detail' post.postID %}" 
+                                        <a href="{% url 'meeting_app:post_detail' post.postID %}" 
                                            class="btn btn-outline-primary btn-sm">
                                             <i class="fas fa-arrow-right"></i> 자세히 보기
                                         </a>
@@ -296,13 +296,13 @@
                             <h4 class="text-muted">게시글이 없습니다</h4>
                             {% if search %}
                                 <p class="text-muted">"{{ search }}"에 대한 검색 결과가 없습니다.</p>
-                                <a href="{% url 'post_list' class.classID %}" class="btn btn-outline-primary">
+                                <a href="{% url 'meeting_app:post_list' class.classID %}" class="btn btn-outline-primary">
                                     <i class="fas fa-list"></i> 전체 게시글 보기
                                 </a>
                             {% else %}
                                 <p class="text-muted">첫 번째 게시글을 작성해보세요!</p>
                                 {% if is_member %}
-                                    <a href="{% url 'post_create' class.classID %}" class="btn btn-primary">
+                                    <a href="{% url 'meeting_app:post_create' class.classID %}" class="btn btn-primary">
                                         <i class="fas fa-pen"></i> 첫 게시글 작성하기
                                     </a>
                                 {% endif %}

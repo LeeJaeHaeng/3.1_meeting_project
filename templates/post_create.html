@@ -133,17 +133,17 @@
     <!-- 네비게이션 -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+            <a class="navbar-brand fw-bold" href="{% url 'meeting_app:home' %}">
                 <i class="fas fa-users text-primary"></i> 소모임
             </a>
             
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'classes' %}">모임 찾기</a>
+                <a class="nav-link" href="{% url 'meeting_app:classes' %}">모임 찾기</a>
                 {% if user_name %}
-                    <a class="nav-link" href="{% url 'mypage' %}">마이페이지</a>
-                    <a class="nav-link" href="{% url 'logout' %}">로그아웃</a>
+                    <a class="nav-link" href="{% url 'meeting_app:mypage' %}">마이페이지</a>
+                    <a class="nav-link" href="{% url 'meeting_app:logout' %}">로그아웃</a>
                 {% else %}
-                    <a class="nav-link" href="{% url 'login' %}">로그인</a>
+                    <a class="nav-link" href="{% url 'meeting_app:login' %}">로그인</a>
                 {% endif %}
             </div>
         </div>
@@ -155,10 +155,10 @@
             <nav aria-label="breadcrumb" class="mb-3">
                 <ol class="breadcrumb justify-content-center text-white-50">
                     <li class="breadcrumb-item">
-                        <a href="{% url 'classes' %}" class="text-white-50 text-decoration-none">모임</a>
+                        <a href="{% url 'meeting_app:classes' %}" class="text-white-50 text-decoration-none">모임</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{% url 'post_list' class.classID %}" class="text-white-50 text-decoration-none">
+                        <a href="{% url 'meeting_app:post_list' class.classID %}" class="text-white-50 text-decoration-none">
                             {{ class.className }}
                         </a>
                     </li>
@@ -298,7 +298,7 @@
                             <button type="submit" class="btn btn-submit">
                                 <i class="fas fa-check"></i> 게시글 등록
                             </button>
-                            <a href="{% url 'post_list' class.classID %}" class="btn btn-cancel">
+                            <a href="{% url 'meeting_app:post_list' class.classID %}" class="btn btn-cancel">
                                 <i class="fas fa-times"></i> 취소
                             </a>
                         </div>

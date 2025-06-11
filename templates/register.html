@@ -377,7 +377,7 @@
                                     <hr class="my-3">
                                     
                                     <div class="form-check mb-2">
-                                        <input class="form-check-input required-check" type="checkbox" id="agreeTerms" required>
+                                        <input class="form-check-input required-check" type="checkbox" id="agreeTerms" name="agree_terms" required>
                                         <label class="form-check-label" for="agreeTerms">
                                             <span class="text-danger">[필수]</span> 서비스 이용약관에 동의합니다
                                         </label>
@@ -405,13 +405,13 @@
                                     <button type="submit" class="btn btn-register">
                                         <i class="fas fa-user-plus me-2"></i> 회원가입 완료
                                     </button>
-                                    <a href="{% url 'login' %}" class="btn btn-outline-secondary">
+                                    <a href="{% url 'meeting_app:login' %}" class="btn btn-outline-secondary">
                                         <i class="fas fa-arrow-left me-2"></i> 로그인으로
                                     </a>
                                 </div>
                                 
                                 <div class="mt-4">
-                                    <a href="{% url 'home' %}" class="text-muted text-decoration-none">
+                                    <a href="{% url 'meeting_app:home' %}" class="text-muted text-decoration-none">
                                         <i class="fas fa-home me-1"></i> 메인페이지로 돌아가기
                                     </a>
                                 </div>

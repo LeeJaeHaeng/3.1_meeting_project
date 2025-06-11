@@ -101,14 +101,14 @@
     <!-- 네비게이션 -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+            <a class="navbar-brand fw-bold" href="{% url 'meeting_app:home' %}">
                 <i class="fas fa-users text-primary"></i> 소모임
             </a>
             
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{% url 'classes' %}">모임 찾기</a>
-                <a class="nav-link active" href="{% url 'mypage' %}">마이페이지</a>
-                <a class="nav-link" href="{% url 'logout' %}">로그아웃</a>
+                <a class="nav-link" href="{% url 'meeting_app:classes' %}">모임 찾기</a>
+                <a class="nav-link active" href="{% url 'meeting_app:mypage' %}">마이페이지</a>
+                <a class="nav-link" href="{% url 'meeting_app:logout' %}">로그아웃</a>
             </div>
         </div>
     </nav>
@@ -216,7 +216,7 @@
                                             <div class="row align-items-center">
                                                 <div class="col-md-8">
                                                     <h6 class="mb-1">
-                                                        <a href="{% url 'post_list' sugang.class_classID.classID %}" 
+                                                        <a href="{% url 'meeting_app:post_list' sugang.class_classID.classID %}" 
                                                            class="text-decoration-none">
                                                             {{ sugang.class_classID.className }}
                                                         </a>
@@ -239,12 +239,12 @@
                                                         <small class="text-muted">참여일: {{ sugang.registration_date|date:"Y-m-d" }}</small>
                                                     </div>
                                                     <div class="btn-group" role="group">
-                                                        <a href="{% url 'post_list' sugang.class_classID.classID %}" 
+                                                        <a href="{% url 'meeting_app:post_list' sugang.class_classID.classID %}" 
                                                            class="btn btn-outline-primary btn-sm">
                                                             <i class="fas fa-comments"></i> 게시판
                                                         </a>
                                                         {% if member.accountType == 'instructor' or member.accountType == 'admin' %}
-                                                            <a href="{% url 'attendance' sugang.class_classID.classID %}" 
+                                                            <a href="{% url 'meeting_app:attendance' sugang.class_classID.classID %}" 
                                                                class="btn btn-outline-success btn-sm">
                                                                 <i class="fas fa-calendar-check"></i> 출석
                                                             </a>
@@ -258,7 +258,7 @@
                                             <i class="fas fa-users fa-3x text-muted mb-3"></i>
                                             <h5 class="text-muted">참여 중인 모임이 없습니다</h5>
                                             <p class="text-muted">새로운 모임을 찾아보세요!</p>
-                                            <a href="{% url 'classes' %}" class="btn btn-primary">
+                                            <a href="{% url 'meeting_app:classes' %}" class="btn btn-primary">
                                                 <i class="fas fa-search"></i> 모임 찾기
                                             </a>
                                         </div>
@@ -281,7 +281,7 @@
                                             <div class="row align-items-center">
                                                 <div class="col-md-9">
                                                     <h6 class="mb-1">
-                                                        <a href="{% url 'post_detail' post.postID %}" 
+                                                        <a href="{% url 'meeting_app:post_detail' post.postID %}" 
                                                            class="text-decoration-none">
                                                             {{ post.title }}
                                                         </a>
@@ -436,7 +436,7 @@
                             </div>
                             <div class="card-body">
                                 {% for interest in 관심사들 %}
-                                    <a href="{% url 'interest_classes' interest.interests.interestID %}" 
+                                    <a href="{% url 'meeting_app:interest_classes' interest.interests.interestID %}" 
                                        class="badge bg-light text-dark me-1 mb-2 text-decoration-none">
                                         {{ interest.interests.interestName }}
                                     </a>
@@ -454,7 +454,7 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <a href="{% url 'classes' %}" class="btn btn-primary">
+                                <a href="{% url 'meeting_app:classes' %}" class="btn btn-primary">
                                     <i class="fas fa-search"></i> 새 모임 찾기
                                 </a>
                                 {% if member.accountType == 'instructor' or member.accountType == 'admin' %}

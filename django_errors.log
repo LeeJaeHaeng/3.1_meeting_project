@@ -1,0 +1,1 @@
+classes = classes.values('classID', 'className', 'max_members', 'sugang_count', ...)
