@@ -1,244 +1,580 @@
- 
-<!-- templates/register.html -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>회원가입 - 소모임</title>
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #4285F4;
+            --secondary-color: #34A853;
+        }
+        
         body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background: linear-gradient(135deg, #4285F4, #34A853);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             min-height: 100vh;
-            padding: 2rem 0;
+            padding: 20px 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         .register-container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
-            max-width: 500px;
+            max-width: 1100px;
             width: 100%;
-            margin: 0 auto;
         }
         
         .register-header {
-            background: linear-gradient(135deg, #4285F4, #34A853);
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
             color: white;
-            padding: 2rem;
+            padding: 40px;
             text-align: center;
         }
         
-        .register-header h2 {
-            margin: 0;
-            font-weight: 700;
+        .register-form {
+            padding: 50px 40px;
         }
         
-        .register-body {
-            padding: 2rem;
-        }
-        
-        .form-control, .form-select {
+        .form-control-custom {
             border: 2px solid #e9ecef;
-            border-radius: 10px;
-            padding: 0.75rem 1rem;
+            border-radius: 12px;
+            padding: 15px 20px;
             font-size: 1rem;
             transition: all 0.3s ease;
         }
         
-        .form-control:focus, .form-select:focus {
-            border-color: #4285F4;
-            box-shadow: 0 0 0 0.25rem rgba(66, 133, 244, 0.25);
+        .form-control-custom:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25);
+        }
+        
+        .form-select-custom {
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 15px 20px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-select-custom:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(66, 133, 244, 0.25);
         }
         
         .btn-register {
-            background: linear-gradient(135deg, #4285F4, #34A853);
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
             border: none;
-            border-radius: 10px;
-            padding: 0.75rem;
-            font-weight: 600;
+            border-radius: 12px;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
             color: white;
             transition: all 0.3s ease;
         }
         
         .btn-register:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(66, 133, 244, 0.3);
+            box-shadow: 0 10px 25px rgba(66, 133, 244, 0.3);
             color: white;
         }
         
-        .form-floating label {
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+        
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
             color: #6c757d;
+            transition: all 0.3s ease;
         }
         
-        .login-link {
-            text-align: center;
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e9ecef;
+        .step.active {
+            background: var(--primary-color);
+            color: white;
         }
         
-        .login-link a {
-            color: #4285F4;
-            text-decoration: none;
-            font-weight: 500;
+        .step.completed {
+            background: var(--secondary-color);
+            color: white;
         }
         
-        .login-link a:hover {
-            text-decoration: underline;
+        .form-section {
+            margin-bottom: 40px;
         }
         
-        .alert {
+        .section-title {
+            color: var(--primary-color);
+            font-weight: bold;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+        }
+        
+        .password-strength {
+            margin-top: 8px;
+        }
+        
+        .strength-bar {
+            height: 5px;
+            border-radius: 3px;
+            background: #e9ecef;
+            overflow: hidden;
+        }
+        
+        .strength-fill {
+            height: 100%;
+            transition: all 0.3s ease;
+            width: 0%;
+        }
+        
+        .strength-weak { background: #dc3545; width: 25%; }
+        .strength-fair { background: #ffc107; width: 50%; }
+        .strength-good { background: #17a2b8; width: 75%; }
+        .strength-strong { background: #28a745; width: 100%; }
+        
+        .help-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .terms-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
             border-radius: 10px;
-            border: none;
-        }
-        
-        .form-text {
-            font-size: 0.8rem;
-            color: #6c757d;
+            padding: 20px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="register-container">
-            <div class="register-header">
-                <i class="fas fa-user-plus fa-3x mb-3"></i>
-                <h2>소모임</h2>
-                <p class="mb-0">회원가입</p>
-            </div>
-            
-            <div class="register-body">
-                {% if messages %}
-                    {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                    {% endfor %}
-                {% endif %}
-                
-                <form method="post" id="registerForm">
-                    {% csrf_token %}
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                {{ form.accountID }}
-                                <label for="{{ form.accountID.id_for_label }}">
-                                    <i class="fas fa-user me-2"></i>{{ form.accountID.label }}
-                                </label>
-                                <div class="form-text">4-20자의 영문, 숫자 조합</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="{{ form.accountType.id_for_label }}" class="form-label">
-                                    <i class="fas fa-id-badge me-2"></i>{{ form.accountType.label }}
-                                </label>
-                                {{ form.accountType }}
-                            </div>
-                        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="register-container">
+                    <!-- 헤더 -->
+                    <div class="register-header">
+                        <h2 class="mb-3">
+                            <i class="fas fa-user-plus me-3"></i>회원가입
+                        </h2>
+                        <p class="mb-0">소모임에서 새로운 취미 친구들을 만나보세요!</p>
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                {{ form.password }}
-                                <label for="{{ form.password.id_for_label }}">
-                                    <i class="fas fa-lock me-2"></i>{{ form.password.label }}
-                                </label>
-                            </div>
+                    <!-- 폼 섹션 -->
+                    <div class="register-form">
+                        <!-- 진행 단계 -->
+                        <div class="step-indicator">
+                            <div class="step active">1</div>
+                            <div class="step">2</div>
+                            <div class="step">3</div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                {{ form.password_confirm }}
-                                <label for="{{ form.password_confirm.id_for_label }}">
-                                    <i class="fas fa-lock me-2"></i>{{ form.password_confirm.label }}
-                                </label>
+                        
+                        <!-- 메시지 -->
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- 회원가입 폼 -->
+                        <form method="post" id="registerForm" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- 계정 정보 섹션 -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-user-circle"></i> 계정 정보
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="id_accountID" class="form-label fw-bold">
+                                                계정 ID <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.accountID }}
+                                            <div class="help-text">4-20자의 영문, 숫자 조합</div>
+                                            {% if form.accountID.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in form.accountID.errors %}
+                                                        <div>{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="id_accountType" class="form-label fw-bold">
+                                                계정 타입 <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.accountType }}
+                                            {% if form.accountType.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in form.accountType.errors %}
+                                                        <div>{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="id_password" class="form-label fw-bold">
+                                                비밀번호 <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.password }}
+                                            <div class="password-strength">
+                                                <div class="strength-bar">
+                                                    <div class="strength-fill" id="strengthFill"></div>
+                                                </div>
+                                                <small id="strengthText" class="text-muted">비밀번호 강도</small>
+                                            </div>
+                                            {% if form.password.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in form.password.errors %}
+                                                        <div>{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="id_password_confirm" class="form-label fw-bold">
+                                                비밀번호 확인 <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.password_confirm }}
+                                            <div id="passwordMatch" class="small mt-1"></div>
+                                            {% if form.password_confirm.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in form.password_confirm.errors %}
+                                                        <div>{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-floating mb-3">
-                        {{ form.name }}
-                        <label for="{{ form.name.id_for_label }}">
-                            <i class="fas fa-signature me-2"></i>{{ form.name.label }}
-                        </label>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                {{ form.phoneNum }}
-                                <label for="{{ form.phoneNum.id_for_label }}">
-                                    <i class="fas fa-phone me-2"></i>{{ form.phoneNum.label }}
-                                </label>
+
+                            <!-- 개인 정보 섹션 -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-id-card"></i> 개인 정보
+                                </h5>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="id_name" class="form-label fw-bold">
+                                                이름 <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.name }}
+                                            {% if form.name.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in form.name.errors %}
+                                                        <div>{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="id_birth" class="form-label fw-bold">
+                                                생년월일 <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.birth }}
+                                            <div class="help-text">만 14세 이상만 가입 가능</div>
+                                            {% if form.birth.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in form.birth.errors %}
+                                                        <div>{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="id_phoneNum" class="form-label fw-bold">
+                                                전화번호 <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.phoneNum }}
+                                            <div class="help-text">010-0000-0000 형식</div>
+                                            {% if form.phoneNum.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in form.phoneNum.errors %}
+                                                        <div>{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-4">
+                                            <label for="id_email" class="form-label fw-bold">
+                                                이메일 <span class="text-danger">*</span>
+                                            </label>
+                                            {{ form.email }}
+                                            <div class="help-text">인증에 사용될 이메일</div>
+                                            {% if form.email.errors %}
+                                                <div class="text-danger small mt-1">
+                                                    {% for error in form.email.errors %}
+                                                        <div>{{ error }}</div>
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                {{ form.email }}
-                                <label for="{{ form.email.id_for_label }}">
-                                    <i class="fas fa-envelope me-2"></i>{{ form.email.label }}
-                                </label>
+
+                            <!-- 약관 동의 섹션 -->
+                            <div class="form-section">
+                                <h5 class="section-title">
+                                    <i class="fas fa-file-contract"></i> 약관 동의
+                                </h5>
+                                
+                                <div class="terms-box">
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="agreeAll">
+                                        <label class="form-check-label fw-bold" for="agreeAll">
+                                            모든 약관에 동의합니다
+                                        </label>
+                                    </div>
+                                    
+                                    <hr class="my-3">
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input required-check" type="checkbox" id="agreeTerms" required>
+                                        <label class="form-check-label" for="agreeTerms">
+                                            <span class="text-danger">[필수]</span> 서비스 이용약관에 동의합니다
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input required-check" type="checkbox" id="agreePrivacy" required>
+                                        <label class="form-check-label" for="agreePrivacy">
+                                            <span class="text-danger">[필수]</span> 개인정보 처리방침에 동의합니다
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="agreeMarketing">
+                                        <label class="form-check-label" for="agreeMarketing">
+                                            <span class="text-muted">[선택]</span> 마케팅 정보 수신에 동의합니다
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+
+                            <!-- 제출 버튼 -->
+                            <div class="text-center">
+                                <div class="btn-group" role="group">
+                                    <button type="submit" class="btn btn-register">
+                                        <i class="fas fa-user-plus me-2"></i> 회원가입 완료
+                                    </button>
+                                    <a href="{% url 'login' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i> 로그인으로
+                                    </a>
+                                </div>
+                                
+                                <div class="mt-4">
+                                    <a href="{% url 'home' %}" class="text-muted text-decoration-none">
+                                        <i class="fas fa-home me-1"></i> 메인페이지로 돌아가기
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="{{ form.birth.id_for_label }}" class="form-label">
-                            <i class="fas fa-calendar me-2"></i>{{ form.birth.label }}
-                        </label>
-                        {{ form.birth }}
-                    </div>
-                    
-                    <div class="d-grid">
-                        <button type="submit" class="btn btn-register btn-lg">
-                            <i class="fas fa-user-plus me-2"></i>회원가입
-                        </button>
-                    </div>
-                </form>
-                
-                <div class="login-link">
-                    <p class="mb-0">이미 계정이 있으신가요? 
-                        <a href="{% url 'login' %}">로그인</a>
-                    </p>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // 폼 유효성 검사
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
-            const password = document.getElementById('id_password').value;
-            const passwordConfirm = document.getElementById('id_password_confirm').value;
+        document.addEventListener('DOMContentLoaded', function() {
+            // 폼 요소들에 CSS 클래스 추가
+            const formControls = ['id_accountID', 'id_name', 'id_phoneNum', 'id_email', 'id_password', 'id_password_confirm', 'id_birth'];
+            formControls.forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.classList.add('form-control-custom');
+                }
+            });
             
-            if (password !== passwordConfirm) {
-                e.preventDefault();
-                alert('비밀번호가 일치하지 않습니다.');
-                return;
+            const accountTypeSelect = document.getElementById('id_accountType');
+            if (accountTypeSelect) {
+                accountTypeSelect.classList.add('form-select-custom');
             }
             
-            if (password.length < 8) {
-                e.preventDefault();
-                alert('비밀번호는 8자 이상이어야 합니다.');
-                return;
+            // 비밀번호 강도 체크
+            const passwordInput = document.getElementById('id_password');
+            const passwordConfirmInput = document.getElementById('id_password_confirm');
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+            const passwordMatch = document.getElementById('passwordMatch');
+            
+            function checkPasswordStrength(password) {
+                let strength = 0;
+                let strengthText = '';
+                
+                if (password.length >= 8) strength++;
+                if (/[a-z]/.test(password)) strength++;
+                if (/[A-Z]/.test(password)) strength++;
+                if (/[0-9]/.test(password)) strength++;
+                if (/[^A-Za-z0-9]/.test(password)) strength++;
+                
+                const strengthFill = document.getElementById('strengthFill');
+                const strengthTextEl = document.getElementById('strengthText');
+                
+                strengthFill.className = 'strength-fill';
+                
+                if (strength < 2) {
+                    strengthFill.classList.add('strength-weak');
+                    strengthTextEl.textContent = '약함';
+                    strengthTextEl.className = 'text-danger';
+                } else if (strength < 3) {
+                    strengthFill.classList.add('strength-fair');
+                    strengthTextEl.textContent = '보통';
+                    strengthTextEl.className = 'text-warning';
+                } else if (strength < 4) {
+                    strengthFill.classList.add('strength-good');
+                    strengthTextEl.textContent = '좋음';
+                    strengthTextEl.className = 'text-info';
+                } else {
+                    strengthFill.classList.add('strength-strong');
+                    strengthTextEl.textContent = '강함';
+                    strengthTextEl.className = 'text-success';
+                }
             }
+            
+            function checkPasswordMatch() {
+                const password = passwordInput.value;
+                const passwordConfirm = passwordConfirmInput.value;
+                
+                if (passwordConfirm === '') {
+                    passwordMatch.textContent = '';
+                    passwordMatch.className = '';
+                } else if (password === passwordConfirm) {
+                    passwordMatch.textContent = '✓ 비밀번호가 일치합니다';
+                    passwordMatch.className = 'text-success';
+                } else {
+                    passwordMatch.textContent = '✗ 비밀번호가 일치하지 않습니다';
+                    passwordMatch.className = 'text-danger';
+                }
+            }
+            
+            if (passwordInput) {
+                passwordInput.addEventListener('input', function() {
+                    checkPasswordStrength(this.value);
+                    checkPasswordMatch();
+                });
+            }
+            
+            if (passwordConfirmInput) {
+                passwordConfirmInput.addEventListener('input', checkPasswordMatch);
+            }
+            
+            // 전체 동의 체크박스
+            const agreeAll = document.getElementById('agreeAll');
+            const requiredChecks = document.querySelectorAll('.required-check');
+            const marketingCheck = document.getElementById('agreeMarketing');
+            
+            agreeAll.addEventListener('change', function() {
+                const isChecked = this.checked;
+                requiredChecks.forEach(check => check.checked = isChecked);
+                marketingCheck.checked = isChecked;
+            });
+            
+            // 개별 체크박스 상태 변경 시 전체 동의 상태 업데이트
+            [...requiredChecks, marketingCheck].forEach(check => {
+                check.addEventListener('change', function() {
+                    const allChecked = [...requiredChecks, marketingCheck].every(c => c.checked);
+                    agreeAll.checked = allChecked;
+                });
+            });
+            
+            // 폼 제출 유효성 검사
+            document.getElementById('registerForm').addEventListener('submit', function(e) {
+                let isValid = true;
+                let errorMessage = '';
+                
+                // 필수 약관 동의 확인
+                const requiredChecks = document.querySelectorAll('.required-check');
+                const allRequiredChecked = Array.from(requiredChecks).every(check => check.checked);
+                
+                if (!allRequiredChecked) {
+                    isValid = false;
+                    errorMessage += '필수 약관에 동의해주세요.\n';
+                }
+                
+                // 비밀번호 일치 확인
+                const password = passwordInput.value;
+                const passwordConfirm = passwordConfirmInput.value;
+                
+                if (password !== passwordConfirm) {
+                    isValid = false;
+                    errorMessage += '비밀번호가 일치하지 않습니다.\n';
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    alert(errorMessage);
+                    return false;
+                }
+                
+                // 제출 확인
+                if (!confirm('입력하신 정보로 회원가입을 진행하시겠습니까?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            
+            // 단계 진행 애니메이션 (시각적 효과용)
+            setTimeout(() => {
+                document.querySelectorAll('.step')[1].classList.add('active');
+            }, 1000);
+            
+            setTimeout(() => {
+                document.querySelectorAll('.step')[2].classList.add('active');
+                document.querySelectorAll('.step')[0].classList.add('completed');
+                document.querySelectorAll('.step')[1].classList.add('completed');
+            }, 2000);
         });
     </script>
 </body>

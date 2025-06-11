@@ -1,909 +1,537 @@
-<!-- templates/interest_classes.html -->
-{% extends 'base.html' %}
-
-{% block title %}{{ interest.interestName }} 모임 - 소모임{% endblock %}
-
-{% block content %}
-<!-- 히어로 섹션 -->
-<div class="hero-section">
-    <h1 class="display-4 fw-bold mb-3">
-        <i class="fas fa-tag"></i> {{ interest.interestName }} 모임
-    </h1>
-    <p class="lead">{{ classes|length }}개의 {{ interest.interestName }} 관련 모임을 찾았습니다!</p>
-    <div class="mt-3">
-        <a href="{% url 'classes' %}" class="btn btn-outline-light me-2">
-            <i class="fas fa-arrow-left"></i> 전체 모임 보기
-        </a>
-        <a href="{% url 'classes' %}?keyword={{ interest.interestName }}" class="btn btn-light">
-            <i class="fas fa-search"></i> 더 많은 {{ interest.interestName }} 모임
-        </a>
-    </div>
-</div>
-
-<!-- 필터 및 정렬 -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card card-custom">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center flex-wrap">
-                    <div class="mb-2 mb-md-0">
-                        <h6 class="mb-1">
-                            <i class="fas fa-filter"></i> {{ interest.interestName }} 관련 모임
-                        </h6>
-                        <small class="text-muted">총 {{ classes|length }}개 모임 · 활발하게 활동 중</small>
-                    </div>
-                    <div class="d-flex gap-2 flex-wrap">
-                        <select class="form-select form-select-sm" style="width: auto;" onchange="sortClasses(this.value)">
-                            <option value="popular">인기순</option>
-                            <option value="recent">최신순</option>
-                            <option value="name">이름순</option>
-                            <option value="member">참여자순</option>
-                        </select>
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleView('grid')" id="gridBtn">
-                                <i class="fas fa-th"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="toggleView('list')" id="listBtn">
-                                <i class="fas fa-list"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 모임 목록 -->
-<div class="row" id="classGrid">
-    {% for class in classes %}
-    <div class="col-lg-4 col-md-6 mb-4 class-item" 
-         data-name="{{ class.className }}" 
-         data-members="{{ class.member_count }}" 
-         data-date="{{ class.classStartDate|date:'Y-m-d' }}">
-        <div class="card card-custom h-100 meeting-card">
-            <!-- 모임 이미지 -->
-            <div class="position-relative">
-                <div class="card-img-top meeting-image" style="height: 200px; background: linear-gradient(45deg, 
-                    {% if interest.interestName|lower in '테니스,배드민턴,축구,농구,야구,배구,수영,요가,필라테스,헬스,크로스핏,러닝,마라톤,등산,트레킹,클라이밍,골프,볼링' %}#667eea, #764ba2
-                    {% elif interest.interestName|lower in '영어,중국어,일본어,java,python,토익,토플,독서,프로그래밍,투자,주식,경제' %}#f093fb, #f5576c
-                    {% elif interest.interestName|lower in '요리,베이킹,커피,와인,여행,게임,카페,맛집,쇼핑,패션' %}#4facfe, #00f2fe
-                    {% elif interest.interestName|lower in '영화,연극,뮤지컬,콘서트,음악,미술,사진,전시회,갤러리' %}#43e97b, #38f9d7
-                    {% else %}#ffecd2, #fcb69f
-                    {% endif %}); display: flex; align-items: center; justify-content: center; border-radius: 12px 12px 0 0;">
-                    <div class="text-center text-white">
-                        <i class="fas fa-users fa-3x opacity-75 mb-2"></i>
-                        <div class="fw-bold">{{ class.member_count }}명 참여</div>
-                        <small class="opacity-75">활발한 모임</small>
-                    </div>
-                </div>
-                
-                <!-- 뱃지들 -->
-                <div class="position-absolute top-0 end-0 m-2">
-                    <span class="badge bg-primary">
-                        <i class="fas fa-tag"></i> {{ interest.interestName }}
-                    </span>
-                </div>
-                
-                {% if class.member_count > 10 %}
-                <div class="position-absolute top-0 start-0 m-2">
-                    <span class="badge bg-warning text-dark">
-                        <i class="fas fa-fire"></i> HOT
-                    </span>
-                </div>
-                {% elif class.member_count > 5 %}
-                <div class="position-absolute top-0 start-0 m-2">
-                    <span class="badge bg-success">
-                        <i class="fas fa-star"></i> 인기
-                    </span>
-                </div>
-                {% endif %}
-                
-                <!-- 활동 상태 표시 -->
-                <div class="position-absolute bottom-0 start-0 m-2">
-                    <span class="badge bg-info">
-                        <i class="fas fa-calendar-check"></i> 정기모임
-                    </span>
-                </div>
-            </div>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>출석 체크 - {{ class.className }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4285F4;
+            --secondary-color: #34A853;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+        
+        .attendance-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 40px 0;
+            border-radius: 0 0 30px 30px;
+        }
+        
+        .attendance-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        
+        .member-row {
+            border-bottom: 1px solid #e9ecef;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .member-row:last-child {
+            border-bottom: none;
+        }
+        
+        .member-row:hover {
+            background: #f8f9fa;
+        }
+        
+        .member-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .attendance-btn {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 10px 20px;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+            min-width: 80px;
+        }
+        
+        .attendance-btn.active {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn-present.active {
+            background: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+        
+        .btn-late.active {
+            background: var(--warning-color);
+            border-color: var(--warning-color);
+            color: black;
+        }
+        
+        .btn-absent.active {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-excused.active {
+            background: var(--info-color);
+            border-color: var(--info-color);
+            color: white;
+        }
+        
+        .date-selector {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+        
+        .submit-btn {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 25px;
+            padding: 15px 40px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(66, 133, 244, 0.3);
+            color: white;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .recent-attendance {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'home' %}">
+                <i class="fas fa-users text-primary"></i> 소모임
+            </a>
             
-            <div class="card-body">
-                <h5 class="card-title fw-bold mb-2">{{ class.className }}</h5>
-                
-                <!-- 모임 정보 -->
-                <div class="mb-3">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="fas fa-calendar-alt text-primary me-2"></i>
-                        <small class="text-muted">
-                            {{ class.classStartDate|date:"Y.m.d" }} ~ {{ class.classEndDate|date:"Y.m.d" }}
-                        </small>
-                    </div>
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="fas fa-users text-success me-2"></i>
-                        <small class="text-muted">참여자 <strong>{{ class.member_count }}명</strong></small>
-                        {% if class.member_count > 0 %}
-                        <div class="ms-auto">
-                            <div class="progress" style="width: 60px; height: 6px;">
-                                <div class="progress-bar bg-success" style="width: {% widthratio class.member_count 20 100 %}%"></div>
-                            </div>
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-map-marker-alt text-danger me-2"></i>
-                        <small class="text-muted">
-                            {% if '강남' in class.className %}강남구
-                            {% elif '홍대' in class.className %}마포구
-                            {% elif '신촌' in class.className %}서대문구
-                            {% elif '이태원' in class.className %}용산구
-                            {% elif '강북' in class.className %}강북구
-                            {% else %}서울 전지역
-                            {% endif %}
-                        </small>
-                    </div>
-                </div>
-                
-                <!-- 참여자 프로필 미리보기 -->
-                {% if class.member_count > 0 %}
-                <div class="mb-3">
-                    <div class="d-flex align-items-center">
-                        <div class="avatar-group me-2">
-                            {% for i in "123" %}
-                            <div class="avatar-sm" title="참여자">
-                                {{ i }}
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <small class="text-muted">
-                            활발하게 활동하는 {{ class.member_count }}명의 멤버
-                        </small>
-                    </div>
-                </div>
-                {% endif %}
-                
-                <!-- 모임 설명 (간단) -->
-                <div class="mb-3">
-                    <p class="text-muted small mb-0">
-                        {{ interest.interestName }}를 함께 즐기는 모임입니다. 
-                        {% if interest.interestName|lower in '테니스,배드민턴,축구,농구' %}
-                            초보자부터 경험자까지 누구나 환영해요!
-                        {% elif interest.interestName|lower in '영어,중국어,일본어' %}
-                            언어 실력 향상을 위해 함께 공부해요!
-                        {% elif interest.interestName|lower in '요리,베이킹' %}
-                            맛있는 요리를 함께 만들어 보아요!
-                        {% else %}
-                            취미를 공유하며 즐거운 시간을 보내요!
-                        {% endif %}
-                    </p>
-                </div>
-                
-                <!-- 액션 버튼들 -->
-                <div class="d-grid gap-2">
-                    <button class="btn btn-success" onclick="applyClass({{ class.classID }})">
-                        <i class="fas fa-plus"></i> 참여하기
-                    </button>
-                    <div class="btn-group" role="group">
-                        <a href="{% url 'post_list' class.classID %}" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-comments"></i> 게시판
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'classes' %}">모임 찾기</a>
+                <a class="nav-link" href="{% url 'mypage' %}">마이페이지</a>
+                <a class="nav-link" href="{% url 'logout' %}">로그아웃</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 헤더 -->
+    <section class="attendance-header">
+        <div class="container">
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb text-white-50">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'classes' %}" class="text-white-50 text-decoration-none">모임</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'post_list' class.classID %}" class="text-white-50 text-decoration-none">
+                            {{ class.className }}
                         </a>
-                        <button class="btn btn-outline-secondary btn-sm" onclick="shareClass({{ class.classID }}, '{{ class.className }}')">
-                            <i class="fas fa-share"></i> 공유
-                        </button>
-                        <button class="btn btn-outline-info btn-sm" onclick="favoriteClass({{ class.classID }})">
-                            <i class="far fa-heart"></i>
-                        </button>
+                    </li>
+                    <li class="breadcrumb-item active text-white">출석 체크</li>
+                </ol>
+            </nav>
+            
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-6 fw-bold mb-2">
+                        <i class="fas fa-calendar-check"></i> 출석 체크
+                    </h1>
+                    <h3 class="mb-3">{{ class.className }}</h3>
+                    <div class="d-flex gap-3">
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-users"></i> {{ 수강생들|length }}명 참여
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-calendar"></i> {{ class.classStartDate }} ~ {{ class.classEndDate }}
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a href="{% url 'post_list' class.classID %}" class="btn btn-light">
+                        <i class="fas fa-arrow-left"></i> 모임으로 돌아가기
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 메시지 -->
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- 출석 체크 메인 -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- 날짜 선택 -->
+                    <div class="date-selector">
+                        <form method="post" id="attendanceForm">
+                            {% csrf_token %}
+                            <div class="row align-items-center mb-4">
+                                <div class="col-md-6">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-calendar text-primary"></i> 출석일 선택
+                                    </h5>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <input type="date" name="attend_date" id="attend_date" 
+                                               class="form-control" value="{{ today|date:'Y-m-d' }}" 
+                                               max="{{ today|date:'Y-m-d' }}" required>
+                                        <button type="button" class="btn btn-outline-primary" 
+                                                onclick="setToday()">
+                                            <i class="fas fa-calendar-day"></i> 오늘
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 출석 현황 안내 -->
+                            <div class="alert alert-info" role="alert">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>출석 체크 방법:</strong> 각 회원의 출석 상태를 선택한 후 '출석 저장' 버튼을 클릭하세요.
+                            </div>
+
+                            <!-- 회원 목록 -->
+                            <div class="attendance-card">
+                                <div class="card-header bg-transparent">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-6">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-users text-primary"></i> 
+                                                참여 회원 ({{ 수강생들|length }}명)
+                                            </h6>
+                                        </div>
+                                        <div class="col-md-6 text-md-end">
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <button type="button" class="btn btn-outline-success" 
+                                                        onclick="setAllAttendance('present')">
+                                                    <i class="fas fa-check"></i> 전체 출석
+                                                </button>
+                                                <button type="button" class="btn btn-outline-danger" 
+                                                        onclick="setAllAttendance('absent')">
+                                                    <i class="fas fa-times"></i> 전체 결석
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% for 수강생 in 수강생들 %}
+                                    <div class="member-row">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-4">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="member-avatar me-3">
+                                                        {{ 수강생.member_accountID.name|slice:":1" }}
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-1">{{ 수강생.member_accountID.name }}</h6>
+                                                        <small class="text-muted">
+                                                            {{ 수강생.member_accountID.get_accountType_display }}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <div class="attendance-buttons text-md-end">
+                                                    <input type="radio" class="btn-check" 
+                                                           name="attendance_{{ 수강생.sugangID }}" 
+                                                           id="present_{{ 수강생.sugangID }}" 
+                                                           value="present">
+                                                    <label class="btn attendance-btn btn-present" 
+                                                           for="present_{{ 수강생.sugangID }}">
+                                                        <i class="fas fa-check"></i> 출석
+                                                    </label>
+
+                                                    <input type="radio" class="btn-check" 
+                                                           name="attendance_{{ 수강생.sugangID }}" 
+                                                           id="late_{{ 수강생.sugangID }}" 
+                                                           value="late">
+                                                    <label class="btn attendance-btn btn-late" 
+                                                           for="late_{{ 수강생.sugangID }}">
+                                                        <i class="fas fa-clock"></i> 지각
+                                                    </label>
+
+                                                    <input type="radio" class="btn-check" 
+                                                           name="attendance_{{ 수강생.sugangID }}" 
+                                                           id="absent_{{ 수강생.sugangID }}" 
+                                                           value="absent">
+                                                    <label class="btn attendance-btn btn-absent" 
+                                                           for="absent_{{ 수강생.sugangID }}">
+                                                        <i class="fas fa-times"></i> 결석
+                                                    </label>
+
+                                                    <input type="radio" class="btn-check" 
+                                                           name="attendance_{{ 수강생.sugangID }}" 
+                                                           id="excused_{{ 수강생.sugangID }}" 
+                                                           value="excused">
+                                                    <label class="btn attendance-btn btn-excused" 
+                                                           for="excused_{{ 수강생.sugangID }}">
+                                                        <i class="fas fa-exclamation"></i> 사유결석
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% empty %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                        <h5 class="text-muted">참여 회원이 없습니다</h5>
+                                        <p class="text-muted">아직 모임에 참여한 회원이 없습니다.</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- 제출 버튼 -->
+                            {% if 수강생들 %}
+                                <div class="text-center mt-4">
+                                    <button type="submit" class="submit-btn">
+                                        <i class="fas fa-save"></i> 출석 저장
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </form>
+                    </div>
+                </div>
+
+                <!-- 사이드바 -->
+                <div class="col-lg-4">
+                    <!-- 출석 통계 -->
+                    <div class="attendance-card">
+                        <div class="card-header bg-transparent">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-bar text-primary"></i> 출석 통계
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <span class="stat-number text-primary">{{ 수강생들|length }}</span>
+                                    <small class="text-muted">총 회원</small>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-number text-success">0</span>
+                                    <small class="text-muted">출석</small>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-number text-warning">0</span>
+                                    <small class="text-muted">지각</small>
+                                </div>
+                                <div class="stat-card">
+                                    <span class="stat-number text-danger">0</span>
+                                    <small class="text-muted">결석</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 최근 출석 기록 -->
+                    {% if recent_attendance %}
+                        <div class="attendance-card">
+                            <div class="card-header bg-transparent">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-history text-primary"></i> 최근 출석 기록
+                                </h6>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="recent-attendance">
+                                    {% for attendance in recent_attendance %}
+                                        <div class="list-group-item list-group-item-action border-0">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <h6 class="mb-1">{{ attendance.sugang_sugangID.member_accountID.name }}</h6>
+                                                    <small class="text-muted">{{ attendance.attendDate }}</small>
+                                                </div>
+                                                <div>
+                                                    {% if attendance.attendanceStatus == 'present' %}
+                                                        <span class="badge bg-success">출석</span>
+                                                    {% elif attendance.attendanceStatus == 'late' %}
+                                                        <span class="badge bg-warning text-dark">지각</span>
+                                                    {% elif attendance.attendanceStatus == 'absent' %}
+                                                        <span class="badge bg-danger">결석</span>
+                                                    {% else %}
+                                                        <span class="badge bg-info">사유결석</span>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <!-- 출석 가이드 -->
+                    <div class="attendance-card">
+                        <div class="card-header bg-transparent">
+                            <h6 class="mb-0">
+                                <i class="fas fa-question-circle text-primary"></i> 출석 기준
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <span class="badge bg-success me-2">출석</span>
+                                    정시에 참여
+                                </li>
+                                <li class="mb-2">
+                                    <span class="badge bg-warning text-dark me-2">지각</span>
+                                    늦게 참여
+                                </li>
+                                <li class="mb-2">
+                                    <span class="badge bg-danger me-2">결석</span>
+                                    참여하지 않음
+                                </li>
+                                <li class="mb-0">
+                                    <span class="badge bg-info me-2">사유결석</span>
+                                    사전 연락 후 불참
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    {% empty %}
-    <div class="col-12">
-        <div class="text-center py-5">
-            <i class="fas fa-search fa-4x text-muted mb-4"></i>
-            <h4 class="text-muted mb-3">{{ interest.interestName }} 관련 모임이 없습니다</h4>
-            <p class="text-muted mb-4">아직 개설된 모임이 없어요. 다른 관심사를 검색해보세요!</p>
-            <div class="d-flex justify-content-center gap-2 flex-wrap">
-                <a href="{% url 'classes' %}" class="btn btn-primary">
-                    <i class="fas fa-search"></i> 전체 모임 보기
-                </a>
-                <a href="{% url 'classes' %}?category=sports" class="btn btn-outline-primary">
-                    <i class="fas fa-running"></i> 운동/스포츠
-                </a>
-                <a href="{% url 'classes' %}?category=study" class="btn btn-outline-primary">
-                    <i class="fas fa-book"></i> 스터디
-                </a>
-                <a href="{% url 'classes' %}?category=hobby" class="btn btn-outline-primary">
-                    <i class="fas fa-palette"></i> 취미/여가
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endfor %}
-</div>
+    </section>
 
-<!-- 관련 관심사 추천 -->
-{% if classes %}
-<div class="mt-5">
-    <h3 class="mb-4">
-        <i class="fas fa-lightbulb text-warning"></i> 이런 관심사는 어떠세요?
-    </h3>
-    <div class="row">
-        <!-- 관련 관심사 카드들 -->
-        {% if interest.interestName|lower in '테니스,배드민턴' %}
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-table-tennis fa-2x text-primary mb-2"></i>
-                        <h6 class="card-title mb-1">탁구</h6>
-                        <small class="text-muted">라켓 스포츠</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-running fa-2x text-success mb-2"></i>
-                        <h6 class="card-title mb-1">러닝</h6>
-                        <small class="text-muted">유산소 운동</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-dumbbell fa-2x text-info mb-2"></i>
-                        <h6 class="card-title mb-1">헬스</h6>
-                        <small class="text-muted">근력 운동</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-swimmer fa-2x text-warning mb-2"></i>
-                        <h6 class="card-title mb-1">수영</h6>
-                        <small class="text-muted">수상 스포츠</small>
-                    </div>
-                </div>
-            </div>
-        {% elif interest.interestName|lower in '영어,토익' %}
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-comments fa-2x text-primary mb-2"></i>
-                        <h6 class="card-title mb-1">토플</h6>
-                        <small class="text-muted">영어 시험</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-book fa-2x text-success mb-2"></i>
-                        <h6 class="card-title mb-1">독서</h6>
-                        <small class="text-muted">영어 원서</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-globe fa-2x text-info mb-2"></i>
-                        <h6 class="card-title mb-1">중국어</h6>
-                        <small class="text-muted">제2외국어</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-microphone fa-2x text-warning mb-2"></i>
-                        <h6 class="card-title mb-1">스피킹</h6>
-                        <small class="text-muted">회화 연습</small>
-                    </div>
-                </div>
-            </div>
-        {% elif interest.interestName|lower in 'java,python' %}
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-code fa-2x text-primary mb-2"></i>
-                        <h6 class="card-title mb-1">웹개발</h6>
-                        <small class="text-muted">프론트엔드</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-robot fa-2x text-success mb-2"></i>
-                        <h6 class="card-title mb-1">AI/머신러닝</h6>
-                        <small class="text-muted">데이터 분석</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-database fa-2x text-info mb-2"></i>
-                        <h6 class="card-title mb-1">데이터베이스</h6>
-                        <small class="text-muted">백엔드</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-mobile-alt fa-2x text-warning mb-2"></i>
-                        <h6 class="card-title mb-1">앱개발</h6>
-                        <small class="text-muted">모바일</small>
-                    </div>
-                </div>
-            </div>
-        {% elif interest.interestName|lower in '요리,베이킹' %}
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-coffee fa-2x text-primary mb-2"></i>
-                        <h6 class="card-title mb-1">커피</h6>
-                        <small class="text-muted">바리스타</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-wine-glass fa-2x text-success mb-2"></i>
-                        <h6 class="card-title mb-1">와인</h6>
-                        <small class="text-muted">와인 테이스팅</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-utensils fa-2x text-info mb-2"></i>
-                        <h6 class="card-title mb-1">맛집</h6>
-                        <small class="text-muted">맛집 탐방</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-seedling fa-2x text-warning mb-2"></i>
-                        <h6 class="card-title mb-1">가드닝</h6>
-                        <small class="text-muted">원예</small>
-                    </div>
-                </div>
-            </div>
-        {% else %}
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-music fa-2x text-primary mb-2"></i>
-                        <h6 class="card-title mb-1">음악</h6>
-                        <small class="text-muted">음악 감상</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-camera fa-2x text-success mb-2"></i>
-                        <h6 class="card-title mb-1">사진</h6>
-                        <small class="text-muted">포토그래피</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-gamepad fa-2x text-info mb-2"></i>
-                        <h6 class="card-title mb-1">게임</h6>
-                        <small class="text-muted">온라인 게임</small>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3 col-sm-6 mb-3">
-                <div class="card border-0 bg-light text-center h-100 related-interest-card">
-                    <div class="card-body py-3">
-                        <i class="fas fa-plane fa-2x text-warning mb-2"></i>
-                        <h6 class="card-title mb-1">여행</h6>
-                        <small class="text-muted">국내외 여행</small>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
-
-<!-- 페이지네이션 -->
-{% if classes.has_other_pages %}
-<nav aria-label="페이지 네비게이션" class="mt-5">
-    <ul class="pagination justify-content-center">
-        {% if classes.has_previous %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ classes.previous_page_number }}">
-                    <i class="fas fa-chevron-left"></i>
-                </a>
-            </li>
-        {% endif %}
-        
-        {% for num in classes.paginator.page_range %}
-            {% if classes.number == num %}
-                <li class="page-item active">
-                    <span class="page-link">{{ num }}</span>
-                </li>
-            {% else %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
-                </li>
-            {% endif %}
-        {% endfor %}
-        
-        {% if classes.has_next %}
-            <li class="page-item">
-                <a class="page-link" href="?page={{ classes.next_page_number }}">
-                    <i class="fas fa-chevron-right"></i>
-                </a>
-            </li>
-        {% endif %}
-    </ul>
-</nav>
-{% endif %}
-
-<!-- JavaScript -->
-<script>
-// 정렬 기능
-function sortClasses(sortBy) {
-    const container = document.getElementById('classGrid');
-    const items = Array.from(container.children);
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    items.sort((a, b) => {
-        switch (sortBy) {
-            case 'name':
-                return a.dataset.name.localeCompare(b.dataset.name);
-            case 'member':
-                return parseInt(b.dataset.members) - parseInt(a.dataset.members);
-            case 'recent':
-                return new Date(b.dataset.date) - new Date(a.dataset.date);
-            case 'popular':
-            default:
-                return parseInt(b.dataset.members) - parseInt(a.dataset.members);
+    <script>
+        // 오늘 날짜 설정
+        function setToday() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('attend_date').value = today;
         }
-    });
-    
-    items.forEach(item => container.appendChild(item));
-}
 
-// 뷰 전환 기능
-function toggleView(viewType) {
-    const container = document.getElementById('classGrid');
-    const gridBtn = document.getElementById('gridBtn');
-    const listBtn = document.getElementById('listBtn');
-    
-    if (viewType === 'list') {
-        container.className = 'row list-view';
-        listBtn.classList.add('active');
-        gridBtn.classList.remove('active');
-        
-        // 리스트 뷰에서는 컬럼을 변경
-        container.querySelectorAll('.class-item').forEach(item => {
-            item.className = 'col-12 mb-3 class-item';
-        });
-    } else {
-        container.className = 'row';
-        gridBtn.classList.add('active');
-        listBtn.classList.remove('active');
-        
-        // 그리드 뷰로 복원
-        container.querySelectorAll('.class-item').forEach(item => {
-            item.className = 'col-lg-4 col-md-6 mb-4 class-item';
-        });
-    }
-}
+        // 전체 출석 상태 설정
+        function setAllAttendance(status) {
+            const radioButtons = document.querySelectorAll(`input[value="${status}"]`);
+            radioButtons.forEach(radio => {
+                radio.checked = true;
+                // 버튼 스타일 업데이트를 위한 이벤트 트리거
+                radio.dispatchEvent(new Event('change'));
+            });
+            updateStats();
+        }
 
-// 모임 참여 신청
-function applyClass(classId) {
-    if (confirm('이 모임에 참여하시겠습니까?')) {
-        // AJAX로 참여 신청 처리
-        fetch(`/classes/apply/${classId}/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCookie('csrftoken'),
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('참여 신청이 완료되었습니다!');
-                location.reload();
-            } else {
-                alert('참여 신청에 실패했습니다: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('오류가 발생했습니다.');
-        });
-    }
-}
+        // 출석 통계 업데이트
+        function updateStats() {
+            const presentCount = document.querySelectorAll('input[value="present"]:checked').length;
+            const lateCount = document.querySelectorAll('input[value="late"]:checked').length;
+            const absentCount = document.querySelectorAll('input[value="absent"]:checked').length;
+            const excusedCount = document.querySelectorAll('input[value="excused"]:checked').length;
 
-// 모임 공유
-function shareClass(classId, className) {
-    if (navigator.share) {
-        navigator.share({
-            title: className,
-            text: `${className} 모임에 함께 참여해보세요!`,
-            url: window.location.href
-        });
-    } else {
-        // 폴백: 클립보드에 복사
-        const url = window.location.href;
-        navigator.clipboard.writeText(url).then(() => {
-            alert('링크가 클립보드에 복사되었습니다!');
-        });
-    }
-}
-
-// 즐겨찾기 토글
-function favoriteClass(classId) {
-    const btn = event.target.closest('button');
-    const icon = btn.querySelector('i');
-    
-    fetch(`/classes/favorite/${classId}/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCookie('csrftoken'),
-            'Content-Type': 'application/json',
-        },
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            if (data.favorited) {
-                icon.className = 'fas fa-heart';
-                btn.classList.add('btn-outline-danger');
-                btn.classList.remove('btn-outline-info');
-            } else {
-                icon.className = 'far fa-heart';
-                btn.classList.add('btn-outline-info');
-                btn.classList.remove('btn-outline-danger');
+            // 통계 카드 업데이트
+            const statCards = document.querySelectorAll('.stat-card .stat-number');
+            if (statCards.length >= 4) {
+                statCards[1].textContent = presentCount;
+                statCards[2].textContent = lateCount;
+                statCards[3].textContent = absentCount;
             }
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
 
-// CSRF 토큰 가져오기
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
+        // 폼 제출 시 확인
+        document.getElementById('attendanceForm').addEventListener('submit', function(e) {
+            const attendDate = document.getElementById('attend_date').value;
+            if (!attendDate) {
+                e.preventDefault();
+                alert('출석일을 선택해주세요.');
+                return;
             }
-        }
-    }
-    return cookieValue;
-}
 
-// 관련 관심사 카드 클릭 이벤트
-document.addEventListener('DOMContentLoaded', function() {
-    const relatedCards = document.querySelectorAll('.related-interest-card');
-    relatedCards.forEach(card => {
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', function() {
-            const interest = this.querySelector('.card-title').textContent;
-            window.location.href = `/interests/${encodeURIComponent(interest)}/`;
+            const checkedInputs = document.querySelectorAll('input[type="radio"]:checked').length;
+            const totalMembers = {{ 수강생들|length }};
+
+            if (checkedInputs === 0) {
+                e.preventDefault();
+                alert('최소 한 명의 출석 상태를 선택해주세요.');
+                return;
+            }
+
+            if (checkedInputs < totalMembers) {
+                if (!confirm(`${totalMembers - checkedInputs}명의 출석 상태가 선택되지 않았습니다. 계속하시겠습니까?`)) {
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            if (!confirm(`${attendDate} 출석을 저장하시겠습니까?`)) {
+                e.preventDefault();
+                return;
+            }
         });
-        
-        // 호버 효과
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-2px)';
-            this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
-            this.style.transition = 'all 0.3s ease';
+
+        // 출석 상태 변경 시 통계 업데이트
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'radio' && e.target.name.startsWith('attendance_')) {
+                updateStats();
+            }
         });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = 'none';
+
+        // 페이지 로드 시 통계 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
         });
-    });
-    
-    // 모임 카드 호버 효과
-    const meetingCards = document.querySelectorAll('.meeting-card');
-    meetingCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-5px)';
-            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
-            this.style.transition = 'all 0.3s ease';
-        });
-        
-        card.addEventListener('mouseleave', function() {
-            this.style.transform = 'translateY(0)';
-            this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-        });
-    });
-    
-    // 초기 뷰 설정
-    document.getElementById('gridBtn').classList.add('active');
-});
-
-// 스크롤 시 애니메이션
-window.addEventListener('scroll', function() {
-    const cards = document.querySelectorAll('.class-item');
-    cards.forEach(card => {
-        const cardTop = card.getBoundingClientRect().top;
-        const cardVisible = 150;
-        
-        if (cardTop < window.innerHeight - cardVisible) {
-            card.style.opacity = '1';
-            card.style.transform = 'translateY(0)';
-        }
-    });
-});
-
-// 검색 기능 (실시간 필터링)
-function filterClasses(keyword) {
-    const items = document.querySelectorAll('.class-item');
-    const searchTerm = keyword.toLowerCase();
-    
-    items.forEach(item => {
-        const className = item.dataset.name.toLowerCase();
-        const cardText = item.textContent.toLowerCase();
-        
-        if (className.includes(searchTerm) || cardText.includes(searchTerm)) {
-            item.style.display = 'block';
-            item.style.animation = 'fadeIn 0.3s ease';
-        } else {
-            item.style.display = 'none';
-        }
-    });
-}
-
-// 키보드 단축키
-document.addEventListener('keydown', function(e) {
-    // Ctrl + F: 검색 포커스
-    if (e.ctrlKey && e.key === 'f') {
-        e.preventDefault();
-        const searchInput = document.querySelector('input[type="search"]');
-        if (searchInput) {
-            searchInput.focus();
-        }
-    }
-    
-    // ESC: 검색 초기화
-    if (e.key === 'Escape') {
-        const searchInput = document.querySelector('input[type="search"]');
-        if (searchInput && searchInput.value) {
-            searchInput.value = '';
-            filterClasses('');
-        }
-    }
-});
-</script>
-
-<!-- 추가 CSS -->
-<style>
-.related-interest-card {
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.related-interest-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.meeting-card {
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.meeting-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-}
-
-.avatar-group {
-    display: flex;
-    align-items: center;
-}
-
-.avatar-sm {
-    width: 24px;
-    height: 24px;
-    background: linear-gradient(45deg, #667eea, #764ba2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 10px;
-    font-weight: bold;
-    margin-right: -8px;
-    border: 2px solid white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-}
-
-.class-item {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: all 0.6s ease;
-}
-
-.class-item:nth-child(1) { animation-delay: 0.1s; }
-.class-item:nth-child(2) { animation-delay: 0.2s; }
-.class-item:nth-child(3) { animation-delay: 0.3s; }
-.class-item:nth-child(4) { animation-delay: 0.4s; }
-.class-item:nth-child(5) { animation-delay: 0.5s; }
-.class-item:nth-child(6) { animation-delay: 0.6s; }
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.list-view .class-item {
-    animation: slideInLeft 0.3s ease;
-}
-
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-.list-view .meeting-card {
-    display: flex;
-    flex-direction: row;
-    height: auto;
-}
-
-.list-view .meeting-card .meeting-image {
-    width: 200px;
-    height: auto;
-    border-radius: 12px 0 0 12px;
-}
-
-.list-view .meeting-card .card-body {
-    flex: 1;
-}
-
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-    .hero-section h1 {
-        font-size: 2rem;
-    }
-    
-    .hero-section .lead {
-        font-size: 1rem;
-    }
-    
-    .btn-group {
-        flex-direction: column;
-        width: 100%;
-    }
-    
-    .d-flex.gap-2 {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-    
-    .related-interest-card {
-        margin-bottom: 1rem;
-    }
-    
-    .list-view .meeting-card {
-        flex-direction: column;
-    }
-    
-    .list-view .meeting-card .meeting-image {
-        width: 100%;
-        border-radius: 12px 12px 0 0;
-    }
-}
-
-@media (max-width: 576px) {
-    .col-lg-4,
-    .col-md-6 {
-        padding: 0 10px;
-    }
-    
-    .meeting-card {
-        margin-bottom: 1rem;
-    }
-    
-    .pagination {
-        font-size: 0.875rem;
-    }
-}
-
-/* 로딩 애니메이션 */
-.loading {
-    display: none;
-    text-align: center;
-    padding: 2rem;
-}
-
-.loading.show {
-    display: block;
-}
-
-.spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* 다크 모드 대응 */
-@media (prefers-color-scheme: dark) {
-    .related-interest-card {
-        background-color: #2d3748 !important;
-        color: white;
-    }
-    
-    .text-muted {
-        color: #a0aec0 !important;
-    }
-    
-    .card-custom {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: white;
-    }
-}
-
-/* 접근성 개선 */
-.sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-}
-
-/* 포커스 표시 */
-.btn:focus,
-.form-select:focus,
-button:focus {
-    outline: 2px solid #007bff;
-    outline-offset: 2px;
-}
-</style>
-
-{% endblock %}
+    </script>
+</body>
+</html>
