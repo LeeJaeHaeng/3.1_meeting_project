@@ -1,0 +1,44 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+*.egg-info/
+.pytest_cache/
+
+# Distributions
+dist/
+build/
+*.egg/
+
+# OS-specific files
+.DS_Store
+.Trashes
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*~
+.nfs*
+
+# Django specific
+*.log
+*.sqlite3
+media/
+static_root/
+local_settings.py
+
+# Virtualenvs
+venv/
+env/
+# Environment variables
+.env
+.flaskenv
+
+# Other
+myvenv/ # 사용자 가상환경 이름 (혹시 있다면) 
