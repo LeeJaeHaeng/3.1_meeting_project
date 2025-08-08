@@ -2,7 +2,7 @@
 
 ## 프로젝트 소개
 이 프로젝트는 소모임(클래스)을 관리하고 운영할 수 있는 웹 기반 시스템입니다. Django 프레임워크를 사용하여 개발되었으며, MySQL 데이터베이스를 활용합니다.
-
+https://github.com/LeeJaeHaeng/3.1_meeting_project/blob/main/meeting_deom.zip
 ## 주요 기능
 - 회원 관리
   - 회원가입 및 로그인
